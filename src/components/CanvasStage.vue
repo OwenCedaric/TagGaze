@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import Konva from 'konva'
-import { Upload } from 'lucide-vue-next'
+import { Upload, Sparkles, Image as ImageIcon } from 'lucide-vue-next'
+import { generateDemoHeroImage } from '@/constants/demoImage'
 import type { CanvasDimensions, CanvasElement, TextElement, ImageElement, SvgElement, WatermarkConfig } from '@/types'
 
 const props = defineProps<{
@@ -9,26 +10,32 @@ const props = defineProps<{
   elements: CanvasElement[]
   selectedId: string | null
   watermark: WatermarkConfig
+  canvasBgColor: string
+  hasBaseImage: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'select', id: string | null): void
   (e: 'updateElement', id: string, partial: Partial<CanvasElement>): void
   (e: 'uploadBaseImage', src: string): void
+  (e: 'editElementText', id: string): void
 }>()
 
-const containerRef = ref<HTMLDivElement | null>(null)
+const viewportRef = ref<HTMLDivElement | null>(null)
+const konvaContainerRef = ref<HTMLDivElement | null>(null)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+// Displayed stage pixel dimensions (scaled to fit viewport)
+const stageDisplaySize = ref({ width: 450, height: 600 })
+let currentScale = 1
+
 let stage: Konva.Stage | null = null
 let bgLayer: Konva.Layer | null = null
 let elementsLayer: Konva.Layer | null = null
 let watermarkLayer: Konva.Layer | null = null
 let transformer: Konva.Transformer | null = null
 
-// Loaded HTMLImageElement cache to prevent re-instantiation
 const imageCache = new Map<string, HTMLImageElement>()
-
-// Responsive display scale
-const viewportScale = ref(1)
 
 function getLoadedImage(src: string): Promise<HTMLImageElement> {
   if (imageCache.has(src)) {
@@ -46,42 +53,51 @@ function getLoadedImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
+function updateStageDimensions() {
+  if (!viewportRef.value) return
+
+  const padding = 48
+  const availW = Math.max(viewportRef.value.clientWidth - padding, 200)
+  const availH = Math.max(viewportRef.value.clientHeight - padding, 200)
+
+  const scale = Math.min(availW / props.preset.width, availH / props.preset.height)
+  currentScale = scale
+
+  stageDisplaySize.value = {
+    width: Math.round(props.preset.width * scale),
+    height: Math.round(props.preset.height * scale)
+  }
+}
+
 function initKonva() {
-  if (!containerRef.value) return
+  updateStageDimensions()
+  if (!konvaContainerRef.value) return
 
-  const container = containerRef.value
-  const { width: pWidth, height: pHeight } = props.preset
-
-  // Calculate fit scale within container
-  const padding = 24
-  const availW = container.clientWidth - padding * 2
-  const availH = container.clientHeight - padding * 2
-  const scale = Math.min(availW / pWidth, availH / pHeight, 1)
-  viewportScale.value = scale
+  const container = konvaContainerRef.value
 
   stage = new Konva.Stage({
     container: container,
-    width: pWidth * scale,
-    height: pHeight * scale,
-    scaleX: scale,
-    scaleY: scale
+    width: stageDisplaySize.value.width,
+    height: stageDisplaySize.value.height,
+    scaleX: currentScale,
+    scaleY: currentScale
   })
 
   bgLayer = new Konva.Layer()
   elementsLayer = new Konva.Layer()
   watermarkLayer = new Konva.Layer({ listening: false })
 
+  // Chronicle Light Styled Transformer (Accent #82a1b9, Base Surface #ffffff)
   transformer = new Konva.Transformer({
-    rotateAnchorOffset: 25,
-    borderStroke: '#8B5CF6',
-    borderStrokeWidth: 2,
-    anchorStroke: '#8B5CF6',
-    anchorFill: '#FFFFFF',
-    anchorSize: 10,
-    anchorCornerRadius: 2,
+    rotateAnchorOffset: 24,
+    borderStroke: '#82a1b9',
+    borderStrokeWidth: 1.5,
+    anchorStroke: '#82a1b9',
+    anchorFill: '#ffffff',
+    anchorSize: 9,
+    anchorCornerRadius: 1,
     enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
     boundBoxFunc: (oldBox, newBox) => {
-      // Limit minimum size
       if (newBox.width < 20 || newBox.height < 20) return oldBox
       return newBox
     }
@@ -92,7 +108,6 @@ function initKonva() {
   stage.add(elementsLayer)
   stage.add(watermarkLayer)
 
-  // Stage click: deselect if background clicked
   stage.on('click tap', (e) => {
     if (e.target === stage || e.target.hasName('bg-rect') || e.target.hasName('base-image')) {
       emit('select', null)
@@ -102,24 +117,22 @@ function initKonva() {
   renderAll()
 }
 
-// Re-render all layers
 async function renderAll() {
   if (!stage || !bgLayer || !elementsLayer || !watermarkLayer || !transformer) return
 
-  // 1. Render Background Layer
+  // 1. Render Background
   bgLayer.destroyChildren()
   const bgRect = new Konva.Rect({
     x: 0,
     y: 0,
     width: props.preset.width,
     height: props.preset.height,
-    fill: '#171717',
+    fill: props.canvasBgColor,
     name: 'bg-rect'
   })
   bgLayer.add(bgRect)
 
   // 2. Render Elements
-  // Keep transformer intact
   const nodesToRemove = elementsLayer.getChildren().filter((node) => node !== transformer)
   nodesToRemove.forEach((node) => node.destroy())
 
@@ -168,11 +181,12 @@ async function renderAll() {
         text: textEl.text,
         fontFamily: textEl.fontFamily,
         fontSize: textEl.fontSize,
-        fontStyle: textEl.fontWeight === 'bold' ? 'bold' : 'normal',
+        fontStyle: textEl.fontWeight === 'bold' || textEl.fontWeight === '700' || textEl.fontWeight === '900' ? 'bold' : 'normal',
         fill: textEl.fill,
         align: textEl.align,
         width: textEl.width,
         lineHeight: textEl.lineHeight,
+        letterSpacing: textEl.letterSpacing,
         stroke: textEl.stroke,
         strokeWidth: textEl.strokeWidth || 0,
         shadowColor: textEl.shadowColor,
@@ -186,18 +200,22 @@ async function renderAll() {
           width: kText.width(),
           height: kText.height(),
           fill: textEl.backgroundColor,
-          cornerRadius: textEl.backgroundRadius || 4
+          cornerRadius: textEl.backgroundRadius || 2
         })
         group.add(bgRect)
       }
 
       group.add(kText)
+
+      group.on('dblclick dbltap', () => {
+        emit('editElementText', el.id)
+      })
+
       bindElementEvents(group, el.id)
       elementsLayer.add(group)
     } else if (el.type === 'svg') {
       const svgEl = el as SvgElement
-      // Render SVG string into Image
-      const blob = new Blob([svgEl.svgContent.replace('currentColor', svgEl.fill)], { type: 'image/svg+xml' })
+      const blob = new Blob([svgEl.svgContent.replace(/currentColor/g, svgEl.fill)], { type: 'image/svg+xml' })
       const url = URL.createObjectURL(blob)
       try {
         const imgObj = await getLoadedImage(url)
@@ -222,7 +240,7 @@ async function renderAll() {
     }
   }
 
-  // 3. Render Watermark Layer
+  // 3. Render Watermark
   watermarkLayer.destroyChildren()
   if (props.watermark.enabled && props.watermark.text) {
     const wm = props.watermark
@@ -235,17 +253,17 @@ async function renderAll() {
         fill: wm.color,
         opacity: wm.opacity,
         rotation: wm.angle,
+        fontFamily: "'Noto Sans SC', sans-serif",
         align: 'center'
       })
       text.offsetX(text.width() / 2)
       text.offsetY(text.height() / 2)
       watermarkLayer.add(text)
     } else {
-      // Grid Repeat Pattern
-      const stepX = wm.gapX || 240
-      const stepY = wm.gapY || 180
-      for (let x = -100; x < props.preset.width + 200; x += stepX) {
-        for (let y = -100; y < props.preset.height + 200; y += stepY) {
+      const stepX = wm.gapX || 280
+      const stepY = wm.gapY || 200
+      for (let x = -100; x < props.preset.width + 300; x += stepX) {
+        for (let y = -100; y < props.preset.height + 300; y += stepY) {
           const text = new Konva.Text({
             x,
             y,
@@ -253,7 +271,8 @@ async function renderAll() {
             fontSize: wm.fontSize,
             fill: wm.color,
             opacity: wm.opacity,
-            rotation: wm.angle
+            rotation: wm.angle,
+            fontFamily: "'Noto Sans SC', sans-serif"
           })
           watermarkLayer.add(text)
         }
@@ -261,7 +280,6 @@ async function renderAll() {
     }
   }
 
-  // 4. Update Transformer Selection
   updateTransformer()
 
   bgLayer.batchDraw()
@@ -312,41 +330,33 @@ function updateTransformer() {
 }
 
 // Watchers
-watch(
-  () => props.elements,
-  () => {
-    renderAll()
-  },
-  { deep: true }
-)
-
-watch(
-  () => props.selectedId,
-  () => {
-    updateTransformer()
+watch(() => props.elements, () => renderAll(), { deep: true })
+watch(() => props.selectedId, () => updateTransformer())
+watch(() => props.watermark, () => renderAll(), { deep: true })
+watch(() => props.canvasBgColor, () => renderAll())
+watch(() => props.preset, () => {
+  if (stage) {
+    stage.destroy()
+    stage = null
   }
-)
+  nextTick(initKonva)
+})
 
-watch(
-  () => props.watermark,
-  () => {
-    renderAll()
-  },
-  { deep: true }
-)
+function handleFileSelect(e: Event) {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
 
-watch(
-  () => props.preset,
-  () => {
-    if (stage) {
-      stage.destroy()
-      stage = null
+  const reader = new FileReader()
+  reader.onload = (event) => {
+    if (event.target?.result) {
+      emit('uploadBaseImage', event.target.result as string)
     }
-    nextTick(initKonva)
   }
-)
+  reader.readAsDataURL(file)
+  target.value = ''
+}
 
-// Handle drag and drop base image
 function handleDrop(e: DragEvent) {
   e.preventDefault()
   const file = e.dataTransfer?.files?.[0]
@@ -361,6 +371,35 @@ function handleDrop(e: DragEvent) {
   }
 }
 
+function handlePaste(e: ClipboardEvent) {
+  const items = e.clipboardData?.items
+  if (!items) return
+
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf('image') !== -1) {
+      const blob = items[i].getAsFile()
+      if (blob) {
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            emit('uploadBaseImage', event.target.result as string)
+          }
+        }
+        reader.readAsDataURL(blob)
+        e.preventDefault()
+        break
+      }
+    }
+  }
+}
+
+function handleLoadDemo() {
+  const demoUrl = generateDemoHeroImage()
+  if (demoUrl) {
+    emit('uploadBaseImage', demoUrl)
+  }
+}
+
 function handleResize() {
   if (stage) {
     stage.destroy()
@@ -372,14 +411,15 @@ function handleResize() {
 onMounted(() => {
   initKonva()
   window.addEventListener('resize', handleResize)
+  window.addEventListener('paste', handlePaste)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  window.removeEventListener('paste', handlePaste)
   if (stage) stage.destroy()
 })
 
-// Expose stage getter for export composable
 defineExpose({
   getStage: () => stage
 })
@@ -387,36 +427,77 @@ defineExpose({
 
 <template>
   <div
-    class="flex-1 h-full flex items-center justify-center bg-neutral-950 p-4 md:p-8 overflow-hidden relative"
+    ref="viewportRef"
+    class="flex-1 h-full flex items-center justify-center bg-chronicle-surface p-4 md:p-8 overflow-hidden relative select-none"
     @dragover.prevent
     @drop="handleDrop"
   >
-    <!-- Background dotted grid -->
-    <div
-      class="absolute inset-0 opacity-20 pointer-events-none"
-      style="background-image: radial-gradient(circle, #737373 1px, transparent 1px); background-size: 20px 20px;"
-    ></div>
+    <!-- Hidden File Input for Canvas trigger -->
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="handleFileSelect"
+    />
 
-    <!-- Konva Stage Container with sleek shadow and frame -->
+    <!-- Chronicle Subtle Geometric Watermark Background -->
     <div
-      ref="containerRef"
-      class="relative shadow-2xl rounded-sm overflow-hidden border border-neutral-800 transition-all duration-200"
+      class="absolute inset-0 opacity-[0.03] pointer-events-none flex items-center justify-center"
+    >
+      <div class="w-[70vmin] h-[70vmin] rounded-full border border-chronicle-primary"></div>
+    </div>
+
+    <!-- Canvas Frame Container (Chronicle Frame with hairline border) -->
+    <div
+      class="relative border border-chronicle-border/80 transition-all duration-300 shadow-sm overflow-hidden"
       :style="{
-        aspectRatio: `${preset.width} / ${preset.height}`,
-        maxHeight: '90%',
-        maxWidth: '90%'
+        width: `${stageDisplaySize.width}px`,
+        height: `${stageDisplaySize.height}px`
       }"
     >
-      <!-- Empty State Drop Guide -->
+      <!-- Dedicated Konva Stage Mounting Target -->
+      <div ref="konvaContainerRef" class="w-full h-full"></div>
+
+      <!-- Chronicle Empty State Overlay: When NO Base Image is loaded -->
       <div
-        v-if="elements.length === 0"
-        class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-neutral-500 pointer-events-none z-10"
+        v-if="!hasBaseImage"
+        class="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-white/95 backdrop-blur-md"
       >
-        <div class="w-14 h-14 rounded-2xl bg-neutral-850 border border-neutral-750 flex items-center justify-center mb-3 text-brand-400">
-          <Upload class="w-7 h-7" />
+        <!-- Center Geometric Hairline Circle -->
+        <div class="w-16 h-16 rounded-full border border-chronicle-border flex items-center justify-center mb-4 bg-chronicle-fill shadow-xs">
+          <ImageIcon class="w-7 h-7 text-chronicle-accent" />
         </div>
-        <p class="text-xs font-semibold text-neutral-300 mb-1">拖拽底图至此处，或从左侧添加文案</p>
-        <p class="text-[11px] text-neutral-500">默认 3:4 黄金画幅 ({{ preset.width }} × {{ preset.height }} px)</p>
+
+        <h2 class="text-base font-serif font-semibold text-chronicle-primary tracking-wide mb-1.5">
+          载入电商底图，开启 3:4 视觉编排
+        </h2>
+
+        <p class="text-xs text-chronicle-secondary font-light max-w-xs leading-relaxed mb-5">
+          支持商品实拍、AI 概念图或白底图。拖拽图片至此、快捷键 ⌘+V 粘贴，或点击下方按钮载入。
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs">
+          <button
+            @click="fileInputRef?.click()"
+            class="w-full py-2.5 px-4 rounded-lg bg-chronicle-primary text-white hover:bg-neutral-800 font-medium text-xs flex items-center justify-center gap-2 transition active:scale-[0.98] shadow-sm"
+          >
+            <Upload class="w-3.5 h-3.5" />
+            <span>选取本地图片文件</span>
+          </button>
+
+          <button
+            @click="handleLoadDemo"
+            class="w-full py-2.5 px-4 rounded-lg border border-chronicle-border bg-white hover:bg-chronicle-fill text-chronicle-primary font-medium text-xs flex items-center justify-center gap-1.5 transition active:scale-[0.98] shadow-xs"
+          >
+            <Sparkles class="w-3.5 h-3.5 text-chronicle-accent" />
+            <span>试用预置商品图</span>
+          </button>
+        </div>
+
+        <div class="mt-6 text-[10px] tracking-wider text-chronicle-secondary font-mono">
+          画幅基准 · {{ preset.ratio }} ({{ preset.width }} × {{ preset.height }} px)
+        </div>
       </div>
     </div>
   </div>

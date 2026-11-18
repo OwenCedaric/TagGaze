@@ -49,6 +49,9 @@ export interface ImageElement extends BaseElement {
   type: 'image'
   src: string
   isBaseImage?: boolean
+  naturalWidth?: number
+  naturalHeight?: number
+  fitMode?: 'cover' | 'contain'
 }
 
 export interface SvgElement extends BaseElement {

@@ -1,49 +1,62 @@
 <script setup lang="ts">
-import { Type, Sparkles, ShieldCheck } from 'lucide-vue-next'
+import { Image as ImageIcon, Type, Sparkles, ShieldCheck } from 'lucide-vue-next'
+
+export type TabType = 'image' | 'text' | 'assets' | 'watermark'
 
 defineProps<{
-  activeTab: 'text' | 'assets' | 'watermark'
+  activeTab: TabType
+  hasBaseImage: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:activeTab', tab: 'text' | 'assets' | 'watermark'): void
+  (e: 'update:activeTab', tab: TabType): void
 }>()
 </script>
 
 <template>
-  <aside class="hidden md:flex flex-col w-80 lg:w-96 border-r border-neutral-800 bg-neutral-900/95 backdrop-blur z-20 shrink-0">
-    <!-- Tab Selector -->
-    <div class="grid grid-cols-3 border-b border-neutral-800 p-2 gap-1 bg-neutral-950/40">
+  <aside class="hidden md:flex flex-col w-80 lg:w-96 border-r border-chronicle-border bg-chronicle-surface-raised z-20 shrink-0 shadow-xs">
+    <!-- Chronicle 4-Tab Nav Strip in Light Palette -->
+    <div class="grid grid-cols-4 border-b border-chronicle-border p-1.5 gap-1 bg-chronicle-surface">
+      <button
+        @click="emit('update:activeTab', 'image')"
+        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition relative"
+        :class="activeTab === 'image' ? 'bg-white text-chronicle-primary font-medium shadow-xs border border-chronicle-border' : 'text-chronicle-secondary hover:text-chronicle-primary hover:bg-white/60'"
+      >
+        <ImageIcon class="w-3.5 h-3.5" :class="activeTab === 'image' ? 'text-chronicle-accent' : ''" />
+        <span>底图</span>
+        <span v-if="!hasBaseImage" class="w-1.5 h-1.5 rounded-full bg-chronicle-accent absolute top-1.5 right-1.5"></span>
+      </button>
+
       <button
         @click="emit('update:activeTab', 'text')"
-        class="py-2 px-1 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition"
-        :class="activeTab === 'text' ? 'bg-neutral-800 text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-200'"
+        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition"
+        :class="activeTab === 'text' ? 'bg-white text-chronicle-primary font-medium shadow-xs border border-chronicle-border' : 'text-chronicle-secondary hover:text-chronicle-primary hover:bg-white/60'"
       >
-        <Type class="w-3.5 h-3.5" />
-        <span>文案排版</span>
+        <Type class="w-3.5 h-3.5" :class="activeTab === 'text' ? 'text-chronicle-accent' : ''" />
+        <span>文案</span>
       </button>
 
       <button
         @click="emit('update:activeTab', 'assets')"
-        class="py-2 px-1 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition"
-        :class="activeTab === 'assets' ? 'bg-neutral-800 text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-200'"
+        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition"
+        :class="activeTab === 'assets' ? 'bg-white text-chronicle-primary font-medium shadow-xs border border-chronicle-border' : 'text-chronicle-secondary hover:text-chronicle-primary hover:bg-white/60'"
       >
-        <Sparkles class="w-3.5 h-3.5" />
-        <span>徽章贴图</span>
+        <Sparkles class="w-3.5 h-3.5" :class="activeTab === 'assets' ? 'text-chronicle-accent' : ''" />
+        <span>徽章</span>
       </button>
 
       <button
         @click="emit('update:activeTab', 'watermark')"
-        class="py-2 px-1 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition"
-        :class="activeTab === 'watermark' ? 'bg-neutral-800 text-white shadow-sm' : 'text-neutral-400 hover:text-neutral-200'"
+        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition"
+        :class="activeTab === 'watermark' ? 'bg-white text-chronicle-primary font-medium shadow-xs border border-chronicle-border' : 'text-chronicle-secondary hover:text-chronicle-primary hover:bg-white/60'"
       >
-        <ShieldCheck class="w-3.5 h-3.5" />
-        <span>防盗水印</span>
+        <ShieldCheck class="w-3.5 h-3.5" :class="activeTab === 'watermark' ? 'text-chronicle-accent' : ''" />
+        <span>水印</span>
       </button>
     </div>
 
-    <!-- Panel Content Slot with scrolling -->
-    <div class="flex-1 overflow-y-auto p-4">
+    <!-- Panel Content Slot with clean light styling -->
+    <div class="flex-1 overflow-y-auto p-5">
       <slot></slot>
     </div>
   </aside>

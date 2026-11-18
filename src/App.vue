@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import Header from './components/Header.vue'
 import CanvasStage from './components/CanvasStage.vue'
 import ElementToolbar from './components/ElementToolbar.vue'
 import Sidebar from './components/layout/Sidebar.vue'
 import BottomDrawer from './components/layout/BottomDrawer.vue'
+import BaseImagePanel from './components/panels/BaseImagePanel.vue'
 import TextPanel from './components/panels/TextPanel.vue'
 import AssetsPanel from './components/panels/AssetsPanel.vue'
 import WatermarkPanel from './components/panels/WatermarkPanel.vue'
@@ -13,10 +14,11 @@ import ExportModal from './components/panels/ExportModal.vue'
 import { useCanvas } from './composables/useCanvas'
 import { useWatermark } from './composables/useWatermark'
 import { useExport } from './composables/useExport'
+import type { TabType } from './components/layout/Sidebar.vue'
 import type { TextElement, SvgElement, ExportOptions } from './types'
 
-// Active Panel Tab
-const activeTab = ref<'text' | 'assets' | 'watermark'>('text')
+// Active Panel Tab: default to 'image' if no base image, else 'text'
+const activeTab = ref<TabType>('image')
 const isExportModalOpen = ref(false)
 
 // Canvas Composable
@@ -25,6 +27,9 @@ const {
   elements,
   selectedId,
   selectedElement,
+  baseImage,
+  hasBaseImage,
+  canvasBgColor,
   canUndo,
   canRedo,
   undo,
@@ -33,7 +38,10 @@ const {
   setPreset,
   selectElement,
   addText,
-  addImage,
+  setBaseImage,
+  updateBaseImageFit,
+  removeBaseImage,
+  addSticker,
   addSvg,
   updateElement,
   removeElement,
@@ -78,6 +86,33 @@ const activeSvg = computed(() => {
     : null
 })
 
+function handleBaseImageUpload(src: string) {
+  setBaseImage(src, 'cover')
+  // Automatically guide user to text typography after loading base image
+  nextTick(() => {
+    activeTab.value = 'text'
+  })
+}
+
+function handleAddTextTier(tierId: 'hero' | 'subtitle' | 'price' | 'body') {
+  addText(tierId)
+  activeTab.value = 'text'
+}
+
+function handleSelectElement(id: string | null) {
+  selectElement(id)
+  if (id) {
+    const el = elements.value.find((e) => e.id === id)
+    if (el?.type === 'text') activeTab.value = 'text'
+    else if (el?.type === 'svg') activeTab.value = 'assets'
+  }
+}
+
+function handleEditElementText(id: string) {
+  selectElement(id)
+  activeTab.value = 'text'
+}
+
 function handleExportChange(options: ExportOptions) {
   currentExportOptions.value = options
   const stage = canvasStageRef.value?.getStage()
@@ -108,7 +143,7 @@ function handleDownload() {
 }
 
 function handleOpenExport() {
-  selectElement(null) // clear transformer box during export preview
+  selectElement(null) // clear transformer selection box during export
   isExportModalOpen.value = true
   const stage = canvasStageRef.value?.getStage()
   if (stage) {
@@ -118,7 +153,6 @@ function handleOpenExport() {
 
 // Global Keyboard shortcuts (Undo/Redo/Delete)
 function handleKeydown(e: KeyboardEvent) {
-  // If typing inside an input or textarea, ignore shortcuts
   const tag = (e.target as HTMLElement)?.tagName
   if (tag === 'INPUT' || tag === 'TEXTAREA') return
 
@@ -142,8 +176,13 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-onMounted(() => {
-  loadState()
+onMounted(async () => {
+  await loadState()
+  if (hasBaseImage.value) {
+    activeTab.value = 'text'
+  } else {
+    activeTab.value = 'image'
+  }
   window.addEventListener('keydown', handleKeydown)
 })
 
@@ -153,40 +192,56 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="h-screen w-screen flex flex-col bg-neutral-950 text-neutral-100 overflow-hidden font-sans">
-    <!-- Top Navigation Header -->
+  <div class="h-screen w-screen flex flex-col bg-chronicle-surface text-chronicle-primary overflow-hidden font-sans">
+    <!-- Chronicle Top Navigation Header -->
     <Header
       :current-preset="currentPreset"
       :can-undo="canUndo"
       :can-redo="canRedo"
       :watermark-enabled="watermark.enabled"
+      :has-base-image="hasBaseImage"
       @change-preset="setPreset"
       @undo="undo"
       @redo="redo"
       @toggle-watermark="toggleWatermark()"
       @open-export="handleOpenExport"
+      @trigger-upload="activeTab = 'image'"
     />
 
     <!-- Main Workspace -->
     <div class="flex-1 flex overflow-hidden relative">
       <!-- Desktop Sidebar -->
-      <Sidebar v-model:activeTab="activeTab">
+      <Sidebar v-model:activeTab="activeTab" :has-base-image="hasBaseImage">
+        <!-- Tab 0: Base Image Manager -->
+        <BaseImagePanel
+          v-if="activeTab === 'image'"
+          :base-image="baseImage"
+          :canvas-bg-color="canvasBgColor"
+          @upload-base-image="handleBaseImageUpload"
+          @update-fit-mode="updateBaseImageFit"
+          @update-bg-color="(c) => canvasBgColor = c"
+          @remove-base-image="removeBaseImage"
+        />
+
+        <!-- Tab 1: Typography -->
         <TextPanel
-          v-if="activeTab === 'text'"
+          v-else-if="activeTab === 'text'"
           :active-text="activeText"
-          @add-text="addText"
+          @add-text-tier="handleAddTextTier"
           @update-text="(partial) => activeText && updateElement(activeText.id, partial)"
           @apply-preset="(p) => activeText && updateElement(activeText.id, p)"
         />
 
+        <!-- Tab 2: Assets & Badges -->
         <AssetsPanel
           v-else-if="activeTab === 'assets'"
           :active-svg="activeSvg"
           @add-svg="addSvg"
-          @upload-logo="(src) => addImage(src, false)"
+          @upload-logo="(src) => addSticker(src)"
           @update-svg-color="(fill) => activeSvg && updateElement(activeSvg.id, { fill })"
         />
 
+        <!-- Tab 3: Watermark -->
         <WatermarkPanel
           v-else-if="activeTab === 'watermark'"
           :watermark="watermark"
@@ -212,18 +267,31 @@ onUnmounted(() => {
           :elements="elements"
           :selected-id="selectedId"
           :watermark="watermark"
-          @select="selectElement"
+          :canvas-bg-color="canvasBgColor"
+          :has-base-image="hasBaseImage"
+          @select="handleSelectElement"
           @update-element="updateElement"
-          @upload-base-image="(src) => addImage(src, true)"
+          @upload-base-image="handleBaseImageUpload"
+          @edit-element-text="handleEditElementText"
         />
       </main>
 
       <!-- Mobile & Tablet Bottom Drawer -->
-      <BottomDrawer v-model:activeTab="activeTab">
+      <BottomDrawer v-model:activeTab="activeTab" :has-base-image="hasBaseImage">
+        <BaseImagePanel
+          v-if="activeTab === 'image'"
+          :base-image="baseImage"
+          :canvas-bg-color="canvasBgColor"
+          @upload-base-image="handleBaseImageUpload"
+          @update-fit-mode="updateBaseImageFit"
+          @update-bg-color="(c) => canvasBgColor = c"
+          @remove-base-image="removeBaseImage"
+        />
+
         <TextPanel
-          v-if="activeTab === 'text'"
+          v-else-if="activeTab === 'text'"
           :active-text="activeText"
-          @add-text="addText"
+          @add-text-tier="handleAddTextTier"
           @update-text="(partial) => activeText && updateElement(activeText.id, partial)"
           @apply-preset="(p) => activeText && updateElement(activeText.id, p)"
         />
@@ -232,7 +300,7 @@ onUnmounted(() => {
           v-else-if="activeTab === 'assets'"
           :active-svg="activeSvg"
           @add-svg="addSvg"
-          @upload-logo="(src) => addImage(src, false)"
+          @upload-logo="(src) => addSticker(src)"
           @update-svg-color="(fill) => activeSvg && updateElement(activeSvg.id, { fill })"
         />
 

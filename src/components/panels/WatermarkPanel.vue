@@ -12,68 +12,72 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="space-y-5 text-xs text-neutral-300">
+  <div class="space-y-6 text-xs text-chronicle-secondary">
     <!-- Enable Switch -->
-    <div class="p-3 bg-neutral-800/80 border border-neutral-700 rounded-xl flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <ShieldCheck v-if="watermark.enabled" class="w-5 h-5 text-amber-400" />
-        <ShieldAlert v-else class="w-5 h-5 text-neutral-500" />
+    <div class="p-4 bg-chronicle-surface border border-chronicle-border rounded-xl flex items-center justify-between shadow-xs">
+      <div class="flex items-center gap-3">
+        <ShieldCheck v-if="watermark.enabled" class="w-5 h-5 text-chronicle-accent" />
+        <ShieldAlert v-else class="w-5 h-5 text-chronicle-secondary opacity-50" />
         <div>
-          <div class="font-medium text-neutral-200">启用防盗水印</div>
-          <div class="text-[10px] text-neutral-500">非破坏性独立安全图层</div>
+          <div class="font-medium text-chronicle-primary font-serif">启用防盗水印</div>
+          <div class="text-[10px] text-chronicle-secondary font-light">非破坏性安全图层，保护电商原图版权</div>
         </div>
       </div>
       <button
         @click="emit('updateWatermark', { enabled: !watermark.enabled })"
-        class="w-11 h-6 rounded-full transition-colors relative"
-        :class="watermark.enabled ? 'bg-amber-500' : 'bg-neutral-700'"
+        class="w-10 h-5 rounded-full transition-colors relative"
+        :class="watermark.enabled ? 'bg-chronicle-accent' : 'bg-neutral-200 border border-neutral-300'"
       >
         <span
-          class="w-4 h-4 rounded-full bg-white absolute top-1 transition-transform"
-          :class="watermark.enabled ? 'left-6' : 'left-1'"
+          class="w-3.5 h-3.5 rounded-full bg-white absolute top-[2px] transition-transform shadow-xs"
+          :class="watermark.enabled ? 'left-5' : 'left-1'"
         ></span>
       </button>
     </div>
 
-    <div v-if="watermark.enabled" class="space-y-4 pt-1">
+    <div v-if="watermark.enabled" class="space-y-5 pt-1">
       <!-- Watermark Text -->
       <div>
-        <label class="block text-[11px] font-semibold text-neutral-400 mb-1.5">水印文案</label>
+        <label class="block text-[11px] font-medium text-chronicle-primary mb-1.5 font-serif">
+          水印文字 (Watermark Text)
+        </label>
         <input
           type="text"
           :value="watermark.text"
           @input="emit('updateWatermark', { text: ($event.target as HTMLInputElement).value })"
-          class="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-2 text-white focus:outline-none focus:border-amber-500 transition text-xs"
+          class="w-full bg-white border border-chronicle-border rounded-lg p-2.5 text-chronicle-primary focus:outline-none focus:border-chronicle-accent transition text-xs font-light shadow-xs"
           placeholder="@您的店铺名称 / 严禁盗图"
         />
       </div>
 
       <!-- Mode (Grid vs Single) -->
       <div>
-        <label class="block text-[11px] font-semibold text-neutral-400 mb-1.5">排布模式</label>
+        <label class="block text-[11px] font-medium text-chronicle-primary mb-1.5 font-serif">
+          排布模式 (Layout Pattern)
+        </label>
         <div class="grid grid-cols-2 gap-2">
           <button
             @click="emit('updateWatermark', { mode: 'grid' })"
-            class="py-2 px-3 rounded-lg border text-center font-medium transition"
-            :class="watermark.mode === 'grid' ? 'bg-amber-500/15 border-amber-500/50 text-amber-300' : 'bg-neutral-800 border-neutral-700 text-neutral-400'"
+            class="py-2.5 px-3 rounded-lg border text-center font-medium transition shadow-xs"
+            :class="watermark.mode === 'grid' ? 'bg-chronicle-accent-light border-chronicle-accent text-chronicle-primary' : 'bg-white border-chronicle-border text-chronicle-secondary hover:bg-chronicle-fill'"
           >
-            全图斜向平铺防盗
+            全图斜向平铺
           </button>
           <button
             @click="emit('updateWatermark', { mode: 'single' })"
-            class="py-2 px-3 rounded-lg border text-center font-medium transition"
-            :class="watermark.mode === 'single' ? 'bg-amber-500/15 border-amber-500/50 text-amber-300' : 'bg-neutral-800 border-neutral-700 text-neutral-400'"
+            class="py-2.5 px-3 rounded-lg border text-center font-medium transition shadow-xs"
+            :class="watermark.mode === 'single' ? 'bg-chronicle-accent-light border-chronicle-accent text-chronicle-primary' : 'bg-white border-chronicle-border text-chronicle-secondary hover:bg-chronicle-fill'"
           >
-            单处中心水印
+            单处中心印记
           </button>
         </div>
       </div>
 
       <!-- Opacity -->
       <div>
-        <div class="flex justify-between text-[11px] font-semibold text-neutral-400 mb-1.5">
+        <div class="flex justify-between text-[11px] font-medium text-chronicle-primary mb-1.5 font-serif">
           <span>水印透明度</span>
-          <span>{{ Math.round(watermark.opacity * 100) }}%</span>
+          <span class="font-mono text-chronicle-accent">{{ Math.round(watermark.opacity * 100) }}%</span>
         </div>
         <input
           type="range"
@@ -82,15 +86,15 @@ const emit = defineEmits<{
           step="0.05"
           :value="watermark.opacity"
           @input="emit('updateWatermark', { opacity: Number(($event.target as HTMLInputElement).value) })"
-          class="w-full accent-amber-500"
+          class="w-full accent-chronicle-accent"
         />
       </div>
 
       <!-- Angle -->
       <div>
-        <div class="flex justify-between text-[11px] font-semibold text-neutral-400 mb-1.5">
+        <div class="flex justify-between text-[11px] font-medium text-chronicle-primary mb-1.5 font-serif">
           <span>倾斜角度</span>
-          <span>{{ watermark.angle }}°</span>
+          <span class="font-mono text-chronicle-accent">{{ watermark.angle }}°</span>
         </div>
         <input
           type="range"
@@ -99,31 +103,52 @@ const emit = defineEmits<{
           step="5"
           :value="watermark.angle"
           @input="emit('updateWatermark', { angle: Number(($event.target as HTMLInputElement).value) })"
-          class="w-full accent-amber-500"
+          class="w-full accent-chronicle-accent"
         />
       </div>
 
       <!-- Font Size & Color -->
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-[11px] font-semibold text-neutral-400 mb-1.5">字号大小</label>
+          <label class="block text-[11px] font-medium text-chronicle-primary mb-1.5 font-serif">
+            水印字号
+          </label>
           <input
             type="range"
             min="14"
             max="64"
             :value="watermark.fontSize"
             @input="emit('updateWatermark', { fontSize: Number(($event.target as HTMLInputElement).value) })"
-            class="w-full accent-amber-500"
+            class="w-full accent-chronicle-accent"
           />
         </div>
         <div>
-          <label class="block text-[11px] font-semibold text-neutral-400 mb-1.5">水印颜色</label>
-          <input
-            type="color"
-            :value="watermark.color"
-            @input="emit('updateWatermark', { color: ($event.target as HTMLInputElement).value })"
-            class="w-full h-8 rounded border border-neutral-700 bg-transparent cursor-pointer"
-          />
+          <label class="block text-[11px] font-medium text-chronicle-primary mb-1.5 font-serif">
+            水印色彩
+          </label>
+          <div class="flex items-center gap-2">
+            <button
+              @click="emit('updateWatermark', { color: '#3d4451' })"
+              title="墨黑水印"
+              class="w-5 h-5 rounded-full border border-chronicle-border bg-[#3d4451]"
+            ></button>
+            <button
+              @click="emit('updateWatermark', { color: '#ffffff' })"
+              title="白色水印"
+              class="w-5 h-5 rounded-full border border-chronicle-border bg-white shadow-xs"
+            ></button>
+            <button
+              @click="emit('updateWatermark', { color: '#82a1b9' })"
+              title="冰川蓝水印"
+              class="w-5 h-5 rounded-full border border-chronicle-border bg-[#82a1b9]"
+            ></button>
+            <input
+              type="color"
+              :value="watermark.color"
+              @input="emit('updateWatermark', { color: ($event.target as HTMLInputElement).value })"
+              class="w-full h-7 rounded border border-chronicle-border bg-transparent cursor-pointer"
+            />
+          </div>
         </div>
       </div>
     </div>
