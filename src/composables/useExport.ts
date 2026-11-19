@@ -10,13 +10,26 @@ export function useExport() {
   let estimateTimer: ReturnType<typeof setTimeout> | null = null
 
   /**
-   * Convert Konva stage into an HTMLCanvasElement at actual preset resolution
+   * Convert Konva stage into an HTMLCanvasElement at actual preset resolution.
+   * Automatically suppresses visual guide overlays so they never appear in exported files.
    */
   function getStageCanvas(stage: Konva.Stage, scale = 1): HTMLCanvasElement {
     const stageScale = stage.scaleX() || 1
-    return stage.toCanvas({
+    const guidesLayer = stage.findOne('.guides-layer') as Konva.Layer | null
+    const snapLayer = stage.findOne('.snap-layer') as Konva.Layer | null
+    const wasGuidesVisible = guidesLayer ? guidesLayer.visible() : false
+    const wasSnapVisible = snapLayer ? snapLayer.visible() : false
+
+    if (guidesLayer) guidesLayer.visible(false)
+    if (snapLayer) snapLayer.visible(false)
+
+    const canvas = stage.toCanvas({
       pixelRatio: (1 / stageScale) * scale
     })
+
+    if (guidesLayer) guidesLayer.visible(wasGuidesVisible)
+    if (snapLayer) snapLayer.visible(wasSnapVisible)
+    return canvas
   }
 
   /**
@@ -125,6 +138,8 @@ export function useExport() {
     estimatedSizeKb,
     estimateFileSize,
     findOptimalQuality,
-    downloadStage
+    downloadStage,
+    getStageCanvas,
+    canvasToBlob
   }
 }

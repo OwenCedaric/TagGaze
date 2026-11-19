@@ -1,10 +1,10 @@
 import { ref, computed } from 'vue'
 import { get, set } from 'idb-keyval'
-import type { CanvasDimensions, CanvasElement, TextElement, ImageElement, SvgElement } from '@/types'
+import type { CanvasDimensions, CanvasElement, TextElement, ImageElement, SvgElement, GuideOverlayType, LayoutTemplate, SplitConfig, ProjectFile } from '@/types'
 import { CANVAS_PRESETS } from '@/constants/presets'
-import { TEXT_TIERS } from '@/constants/fonts'
+import { TEXT_TIERS, type PromoBenefitPreset } from '@/constants/fonts'
 import { SVG_ASSETS } from '@/constants/assets'
-import { generateDemoHeroImage } from '@/constants/demoImage'
+import { generateDemoHeroImage, generateDemoSplitImages } from '@/constants/demoImage'
 import { useHistory } from './useHistory'
 
 const STORAGE_KEY = 'taggaze_project_state'
@@ -15,6 +15,15 @@ export function useCanvas() {
   const selectedId = ref<string | null>(null)
   const isBaseImageLocked = ref(true)
   const canvasBgColor = ref('#ffffff') // Chronicle Light Pure Canvas
+  const guideOverlay = ref<GuideOverlayType>('none')
+  const enableSnapping = ref<boolean>(true) // Smart Magnetic Snapping
+  const splitConfig = ref<SplitConfig>({
+    mode: 'single',
+    ratio: 0.5,
+    dividerWidth: 4,
+    dividerColor: '#ffffff',
+    badge: 'none'
+  })
   const isLoaded = ref(false)
 
   const selectedElement = computed(() => {
@@ -27,24 +36,32 @@ export function useCanvas() {
     ) as ImageElement | undefined
   })
 
-  const hasBaseImage = computed(() => !!baseImage.value)
+  const hasBaseImage = computed(() => {
+    if (splitConfig.value.mode !== 'single') {
+      return !!(splitConfig.value.imageA || splitConfig.value.imageB)
+    }
+    return !!baseImage.value
+  })
 
   // History system
   const { canUndo, canRedo, record, undo: historyUndo, redo: historyRedo, reset: historyReset } = useHistory<{
     elements: CanvasElement[]
     preset: CanvasDimensions
     canvasBgColor: string
+    splitConfig?: SplitConfig
   }>({
     elements: [],
     preset: currentPreset.value,
-    canvasBgColor: canvasBgColor.value
+    canvasBgColor: canvasBgColor.value,
+    splitConfig: splitConfig.value
   })
 
   function saveSnapshot() {
     record({
       elements: JSON.parse(JSON.stringify(elements.value)),
       preset: { ...currentPreset.value },
-      canvasBgColor: canvasBgColor.value
+      canvasBgColor: canvasBgColor.value,
+      splitConfig: JSON.parse(JSON.stringify(splitConfig.value))
     })
     persistState()
   }
@@ -56,6 +73,7 @@ export function useCanvas() {
         elements: JSON.parse(JSON.stringify(elements.value)),
         preset: JSON.parse(JSON.stringify(currentPreset.value)),
         canvasBgColor: canvasBgColor.value,
+        splitConfig: JSON.parse(JSON.stringify(splitConfig.value)),
         updatedAt: Date.now()
       })
     } catch (err) {
@@ -69,6 +87,7 @@ export function useCanvas() {
         elements: CanvasElement[]
         preset: CanvasDimensions
         canvasBgColor?: string
+        splitConfig?: SplitConfig
       }>(STORAGE_KEY)
 
       if (data && Array.isArray(data.elements)) {
@@ -79,10 +98,14 @@ export function useCanvas() {
         if (data.canvasBgColor) {
           canvasBgColor.value = data.canvasBgColor
         }
+        if (data.splitConfig) {
+          splitConfig.value = data.splitConfig
+        }
         historyReset({
           elements: elements.value,
           preset: currentPreset.value,
-          canvasBgColor: canvasBgColor.value
+          canvasBgColor: canvasBgColor.value,
+          splitConfig: splitConfig.value
         })
       }
     } catch (err) {
@@ -98,6 +121,9 @@ export function useCanvas() {
       elements.value = prevState.elements
       currentPreset.value = prevState.preset
       canvasBgColor.value = prevState.canvasBgColor || '#ffffff'
+      if (prevState.splitConfig) {
+        splitConfig.value = prevState.splitConfig
+      }
       selectedId.value = null
       persistState()
     }
@@ -109,6 +135,9 @@ export function useCanvas() {
       elements.value = nextState.elements
       currentPreset.value = nextState.preset
       canvasBgColor.value = nextState.canvasBgColor || '#ffffff'
+      if (nextState.splitConfig) {
+        splitConfig.value = nextState.splitConfig
+      }
       selectedId.value = null
       persistState()
     }
@@ -190,6 +219,85 @@ export function useCanvas() {
     selectedId.value = newText.id
     saveSnapshot()
     return newText
+  }
+
+  function addPromoBenefit(preset: PromoBenefitPreset) {
+    const targetPreset = currentPreset.value
+    const pillWidth = Math.min(Math.round(targetPreset.width * 0.72), 760)
+
+    const newBenefitText: TextElement = {
+      id: 'text_benefit_' + Date.now(),
+      type: 'text',
+      text: preset.fullText,
+      fontFamily: "'Noto Sans SC', sans-serif",
+      fontSize: 34,
+      fontWeight: '700',
+      fill: preset.fill,
+      backgroundColor: preset.backgroundColor,
+      backgroundPadding: 14,
+      backgroundRadius: preset.backgroundRadius || 6,
+      align: 'center',
+      lineHeight: 1.3,
+      letterSpacing: 0.5,
+      shadowColor: preset.shadowColor || 'rgba(0,0,0,0.2)',
+      shadowBlur: 10,
+      shadowOffsetY: 3,
+      x: Math.round((targetPreset.width - pillWidth) / 2),
+      y: Math.round(targetPreset.height * 0.82),
+      width: pillWidth,
+      height: 64,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+      opacity: 1,
+      locked: false,
+      zIndex: elements.value.length + 1
+    }
+
+    elements.value.push(newBenefitText)
+    selectedId.value = newBenefitText.id
+    saveSnapshot()
+    return newBenefitText
+  }
+
+  function addBrandGuarantee(brandName: string, brandTagline: string, primaryColor: string) {
+    const targetPreset = currentPreset.value
+    const textContent = `【${brandName || '官方旗舰'}】${brandTagline || '官方正品 · 顺丰速发 · 假一赔十'}`
+    const pillWidth = Math.min(targetPreset.width - 80, Math.max(460, textContent.length * 24 + 48))
+
+    const brandEl: TextElement = {
+      id: 'text_brand_' + Date.now(),
+      type: 'text',
+      text: textContent,
+      fontFamily: "'Noto Sans SC', sans-serif",
+      fontSize: 26,
+      fontWeight: '700',
+      fill: '#ffffff',
+      backgroundColor: primaryColor || '#3d4451',
+      backgroundPadding: 12,
+      backgroundRadius: 6,
+      align: 'center',
+      lineHeight: 1.3,
+      letterSpacing: 0.5,
+      shadowColor: 'rgba(0,0,0,0.2)',
+      shadowBlur: 10,
+      shadowOffsetY: 3,
+      x: Math.round((targetPreset.width - pillWidth) / 2),
+      y: Math.round(targetPreset.height * 0.88),
+      width: pillWidth,
+      height: 56,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+      opacity: 1,
+      locked: false,
+      zIndex: elements.value.length + 1
+    }
+
+    elements.value.push(brandEl)
+    selectedId.value = brandEl.id
+    saveSnapshot()
+    return brandEl
   }
 
   function calibrateBaseImageSize(imgEl: ImageElement, fitMode: 'cover' | 'contain') {
@@ -407,6 +515,107 @@ export function useCanvas() {
     img.src = demoUrl
   }
 
+  function applyTemplate(template: LayoutTemplate) {
+    const targetPreset = CANVAS_PRESETS.find((p) => p.ratio === template.presetRatio) || currentPreset.value
+    currentPreset.value = targetPreset
+
+    function populateTemplateElements(baseImgEl: ImageElement) {
+      calibrateBaseImageSize(baseImgEl, 'cover')
+      const newElements: CanvasElement[] = [baseImgEl]
+
+      for (const item of template.elements) {
+        if (item.type === 'text') {
+          const textItem = item as Partial<TextElement>
+          const defaultW = textItem.fontSize && textItem.fontSize > 40 ? 700 : 800
+          const textEl: TextElement = {
+            id: 'text_' + Date.now() + Math.random().toString(36).slice(2, 6),
+            type: 'text',
+            text: textItem.text || '营销文案',
+            fontFamily: textItem.fontFamily || "'Noto Serif SC', serif",
+            fontSize: textItem.fontSize || 48,
+            fontWeight: textItem.fontWeight || '700',
+            fill: textItem.fill || '#3d4451',
+            align: textItem.align || 'center',
+            lineHeight: textItem.lineHeight || 1.35,
+            letterSpacing: textItem.letterSpacing || 0.5,
+            x: textItem.x !== undefined ? textItem.x : Math.round((targetPreset.width - (textItem.width || defaultW)) / 2),
+            y: textItem.y !== undefined ? textItem.y : Math.round(targetPreset.height * 0.15),
+            width: textItem.width || defaultW,
+            height: 90,
+            rotation: textItem.rotation || 0,
+            scaleX: 1,
+            scaleY: 1,
+            opacity: 1,
+            locked: false,
+            zIndex: newElements.length + 1,
+            backgroundColor: textItem.backgroundColor,
+            backgroundPadding: textItem.backgroundPadding,
+            backgroundRadius: textItem.backgroundRadius,
+            stroke: textItem.stroke,
+            strokeWidth: textItem.strokeWidth
+          }
+          newElements.push(textEl)
+        } else if (item.type === 'svg') {
+          const svgItem = item as Partial<SvgElement>
+          const w = svgItem.width || 120
+          const h = svgItem.height || 120
+          const svgEl: SvgElement = {
+            id: 'svg_' + Date.now() + Math.random().toString(36).slice(2, 6),
+            type: 'svg',
+            svgContent: svgItem.svgContent || '',
+            fill: svgItem.fill || '#82a1b9',
+            x: svgItem.x !== undefined ? svgItem.x : Math.round((targetPreset.width - w) / 2),
+            y: svgItem.y !== undefined ? svgItem.y : Math.round(targetPreset.height * 0.72),
+            width: w,
+            height: h,
+            rotation: svgItem.rotation || 0,
+            scaleX: 1,
+            scaleY: 1,
+            opacity: 1,
+            locked: false,
+            zIndex: newElements.length + 1
+          }
+          newElements.push(svgEl)
+        }
+      }
+
+      elements.value = newElements
+      selectedId.value = null
+      saveSnapshot()
+    }
+
+    if (baseImage.value) {
+      populateTemplateElements(baseImage.value)
+    } else {
+      const demoUrl = generateDemoHeroImage()
+      if (!demoUrl) return
+      const img = new Image()
+      img.onload = () => {
+        const baseEl: ImageElement = {
+          id: 'base_img_' + Date.now(),
+          type: 'image',
+          src: demoUrl,
+          isBaseImage: true,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+          fitMode: 'cover',
+          x: 0,
+          y: 0,
+          width: targetPreset.width,
+          height: targetPreset.height,
+          rotation: 0,
+          scaleX: 1,
+          scaleY: 1,
+          opacity: 1,
+          locked: isBaseImageLocked.value,
+          zIndex: 0
+        }
+        populateTemplateElements(baseEl)
+      }
+      img.src = demoUrl
+    }
+  }
+
   function updateElement(id: string, partial: Partial<CanvasElement>) {
     const idx = elements.value.findIndex((el) => el.id === id)
     if (idx !== -1) {
@@ -469,6 +678,134 @@ export function useCanvas() {
     }
   }
 
+  function toggleSnapping() {
+    enableSnapping.value = !enableSnapping.value
+  }
+
+  function updateSplitConfig(partial: Partial<SplitConfig>) {
+    splitConfig.value = { ...splitConfig.value, ...partial }
+    saveSnapshot()
+  }
+
+  function setSplitImage(slot: 'A' | 'B', src: string) {
+    if (slot === 'A') {
+      splitConfig.value.imageA = src
+    } else {
+      splitConfig.value.imageB = src
+    }
+    saveSnapshot()
+  }
+
+  function loadDemoSplitImages() {
+    const demos = generateDemoSplitImages()
+    splitConfig.value = {
+      mode: 'split-vertical',
+      ratio: 0.5,
+      dividerWidth: 4,
+      dividerColor: '#ffffff',
+      badge: 'vs',
+      imageA: demos.imageA,
+      imageB: demos.imageB
+    }
+    saveSnapshot()
+  }
+
+  function addCalloutPin(type: 'arrow' | 'focus' | 'magnifier' | 'pindot', labelText: string) {
+    const W = currentPreset.value.width
+    const H = currentPreset.value.height
+
+    let assetId = 'arrow-curved-right'
+    let defaultFill = '#e11d48'
+    let defaultW = 100
+    let defaultH = 80
+
+    if (type === 'focus') {
+      assetId = 'callout-focus-ring'
+      defaultFill = '#f59e0b'
+      defaultW = 90
+      defaultH = 90
+    } else if (type === 'magnifier') {
+      assetId = 'callout-magnifier'
+      defaultFill = '#82a1b9'
+      defaultW = 90
+      defaultH = 90
+    } else if (type === 'pindot') {
+      assetId = 'callout-pin-dot'
+      defaultFill = '#10b981'
+      defaultW = 75
+      defaultH = 85
+    }
+
+    const asset = SVG_ASSETS.find((a) => a.id === assetId)
+    if (!asset) return
+
+    // Position pointer near center left
+    const ptrX = Math.round(W * 0.3)
+    const ptrY = Math.round(H * 0.46)
+
+    // Add pointer SVG
+    const svgEl = addSvg(asset.svg, asset.defaultFill || defaultFill, defaultW, defaultH, ptrX, ptrY)
+
+    // Add label next to pointer
+    const textW = Math.max(220, labelText.length * 28 + 40)
+    const labelX = ptrX + defaultW + 16
+    const labelY = ptrY + Math.round((defaultH - 46) / 2)
+
+    const calloutText: TextElement = {
+      id: 'text_' + Date.now() + Math.random().toString(36).slice(2, 6),
+      type: 'text',
+      text: labelText,
+      fontFamily: "'Noto Sans SC', sans-serif",
+      fontSize: 24,
+      fontWeight: '700',
+      fill: '#ffffff',
+      backgroundColor: '#3d4451',
+      backgroundPadding: 10,
+      backgroundRadius: 6,
+      align: 'center',
+      lineHeight: 1.2,
+      letterSpacing: 0.5,
+      shadowColor: 'rgba(0,0,0,0.2)',
+      shadowBlur: 8,
+      shadowOffsetY: 2,
+      x: labelX,
+      y: labelY,
+      width: textW,
+      height: 48,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+      opacity: 1,
+      locked: false,
+      zIndex: elements.value.length + 1
+    }
+
+    elements.value.push(calloutText)
+    selectedId.value = calloutText.id
+    saveSnapshot()
+    return { svgEl, calloutText }
+  }
+
+  function restoreProject(project: ProjectFile) {
+    if (project.preset) {
+      currentPreset.value = project.preset
+    }
+    if (project.canvasBgColor) {
+      canvasBgColor.value = project.canvasBgColor
+    }
+    if (Array.isArray(project.elements)) {
+      elements.value = JSON.parse(JSON.stringify(project.elements))
+    }
+    if (project.splitConfig) {
+      splitConfig.value = JSON.parse(JSON.stringify(project.splitConfig))
+    }
+    if (project.guideOverlay) {
+      guideOverlay.value = project.guideOverlay
+    }
+    selectedId.value = null
+    saveSnapshot()
+  }
+
   return {
     currentPreset,
     elements,
@@ -487,6 +824,9 @@ export function useCanvas() {
     setPreset,
     selectElement,
     addText,
+    addPromoBenefit,
+    addBrandGuarantee,
+    addCalloutPin,
     setBaseImage,
     updateBaseImageFit,
     removeBaseImage,
@@ -498,6 +838,15 @@ export function useCanvas() {
     bringForward,
     sendBackward,
     toggleLock,
-    loadDemoTemplate
+    loadDemoTemplate,
+    loadDemoSplitImages,
+    guideOverlay,
+    applyTemplate,
+    enableSnapping,
+    toggleSnapping,
+    splitConfig,
+    updateSplitConfig,
+    setSplitImage,
+    restoreProject
   }
 }

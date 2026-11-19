@@ -114,3 +114,86 @@ export function generateDemoHeroImage(): string {
 
   return canvas.toDataURL('image/jpeg', 0.92)
 }
+
+/**
+ * Generates a pair of high-resolution demo images for Split Screen Comparison (Before & After)
+ */
+export function generateDemoSplitImages(): { imageA: string; imageB: string } {
+  const width = 800
+  const height = 1200
+
+  // 1. Generate Image A (Before)
+  const canvasA = document.createElement('canvas')
+  canvasA.width = width
+  canvasA.height = height
+  const ctxA = canvasA.getContext('2d')
+  if (ctxA) {
+    // Backdrop: Muted warm gray
+    const gradA = ctxA.createLinearGradient(0, 0, 0, height)
+    gradA.addColorStop(0, '#e5e1da')
+    gradA.addColorStop(1, '#c9c2b5')
+    ctxA.fillStyle = gradA
+    ctxA.fillRect(0, 0, width, height)
+
+    // Center product silhouette (matte / pre-treatment)
+    ctxA.fillStyle = 'rgba(61, 68, 81, 0.12)'
+    ctxA.beginPath()
+    ctxA.ellipse(width / 2, height * 0.72, 220, 36, 0, 0, Math.PI * 2)
+    ctxA.fill()
+
+    ctxA.fillStyle = '#b8af9f'
+    ctxA.beginPath()
+    ctxA.roundRect(width / 2 - 120, height * 0.35, 240, 380, 24)
+    ctxA.fill()
+
+    // Title / Badge
+    ctxA.fillStyle = 'rgba(61, 68, 81, 0.75)'
+    ctxA.font = 'bold 36px "Noto Sans SC", sans-serif'
+    ctxA.textAlign = 'center'
+    ctxA.fillText('BEFORE', width / 2, height * 0.22)
+    ctxA.font = '20px "Noto Sans SC", sans-serif'
+    ctxA.fillStyle = 'rgba(61, 68, 81, 0.55)'
+    ctxA.fillText('使用前 · 暗沉粗糙干燥', width / 2, height * 0.26)
+  }
+
+  // 2. Generate Image B (After)
+  const canvasB = document.createElement('canvas')
+  canvasB.width = width
+  canvasB.height = height
+  const ctxB = canvasB.getContext('2d')
+  if (ctxB) {
+    // Backdrop: Bright luminous glowing gradient
+    const gradB = ctxB.createRadialGradient(width / 2, height * 0.45, 60, width / 2, height * 0.5, 700)
+    gradB.addColorStop(0, '#ffffff')
+    gradB.addColorStop(0.6, '#f1f5f9')
+    gradB.addColorStop(1, '#dbeafe')
+    ctxB.fillStyle = gradB
+    ctxB.fillRect(0, 0, width, height)
+
+    // Center product silhouette (glowing / luminous essence)
+    ctxB.shadowColor = 'rgba(56, 189, 248, 0.35)'
+    ctxB.shadowBlur = 40
+    ctxB.fillStyle = '#ffffff'
+    ctxB.beginPath()
+    ctxB.roundRect(width / 2 - 120, height * 0.35, 240, 380, 24)
+    ctxB.fill()
+    ctxB.strokeStyle = '#38bdf8'
+    ctxB.lineWidth = 3
+    ctxB.stroke()
+
+    // Title / Badge
+    ctxB.shadowBlur = 0
+    ctxB.fillStyle = '#0284c7'
+    ctxB.font = 'bold 36px "Noto Sans SC", sans-serif'
+    ctxB.textAlign = 'center'
+    ctxB.fillText('AFTER', width / 2, height * 0.22)
+    ctxB.font = '20px "Noto Sans SC", sans-serif'
+    ctxB.fillStyle = '#0369a1'
+    ctxB.fillText('使用后 · 水光透亮细嫩', width / 2, height * 0.26)
+  }
+
+  return {
+    imageA: canvasA.toDataURL('image/jpeg', 0.9),
+    imageB: canvasB.toDataURL('image/jpeg', 0.9)
+  }
+}

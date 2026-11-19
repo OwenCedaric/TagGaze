@@ -9,17 +9,30 @@ import BaseImagePanel from './components/panels/BaseImagePanel.vue'
 import TextPanel from './components/panels/TextPanel.vue'
 import AssetsPanel from './components/panels/AssetsPanel.vue'
 import WatermarkPanel from './components/panels/WatermarkPanel.vue'
+import TemplatesPanel from './components/panels/TemplatesPanel.vue'
 import ExportModal from './components/panels/ExportModal.vue'
+import BatchExportModal from './components/panels/BatchExportModal.vue'
 
 import { useCanvas } from './composables/useCanvas'
 import { useWatermark } from './composables/useWatermark'
 import { useExport } from './composables/useExport'
+import { useBrandKit } from './composables/useBrandKit'
+import { exportProjectFile, parseProjectFile } from './utils/projectFile'
+import { SimpleZip } from './utils/simpleZip'
 import type { TabType } from './components/layout/Sidebar.vue'
-import type { TextElement, SvgElement, ExportOptions } from './types'
+import type { TextElement, SvgElement, ExportOptions, LayoutTemplate, BatchImageItem, BatchExportOptions } from './types'
 
 // Active Panel Tab: default to 'image' if no base image, else 'text'
 const activeTab = ref<TabType>('image')
 const isExportModalOpen = ref(false)
+const isBatchModalOpen = ref(false)
+const isBatchProcessing = ref(false)
+const progressCurrent = ref(0)
+const progressTotal = ref(0)
+const currentBatchStatus = ref('')
+
+// Brand Kit Composable
+const { brandKit, updateBrandKit } = useBrandKit()
 
 // Canvas Composable
 const {
@@ -38,6 +51,9 @@ const {
   setPreset,
   selectElement,
   addText,
+  addPromoBenefit,
+  addBrandGuarantee,
+  addCalloutPin,
   setBaseImage,
   updateBaseImageFit,
   removeBaseImage,
@@ -49,7 +65,16 @@ const {
   bringForward,
   sendBackward,
   toggleLock,
-  loadDemoTemplate
+  loadDemoTemplate,
+  loadDemoSplitImages,
+  guideOverlay,
+  applyTemplate,
+  enableSnapping,
+  toggleSnapping,
+  splitConfig,
+  updateSplitConfig,
+  setSplitImage,
+  restoreProject
 } = useCanvas()
 
 // Watermark Composable
@@ -62,7 +87,9 @@ const {
   estimatedSizeKb,
   estimateFileSize,
   findOptimalQuality,
-  downloadStage
+  downloadStage,
+  getStageCanvas,
+  canvasToBlob
 } = useExport()
 
 const canvasStageRef = ref<InstanceType<typeof CanvasStage> | null>(null)
@@ -99,6 +126,13 @@ function handleLoadDemo() {
   loadDemoTemplate()
   nextTick(() => {
     activeTab.value = 'assets'
+  })
+}
+
+function handleApplyTemplate(template: LayoutTemplate) {
+  applyTemplate(template)
+  nextTick(() => {
+    activeTab.value = 'text'
   })
 }
 
@@ -159,6 +193,124 @@ function handleOpenExport() {
   }
 }
 
+function handleSaveProject() {
+  exportProjectFile(
+    currentPreset.value,
+    canvasBgColor.value,
+    elements.value,
+    watermark.value,
+    splitConfig.value,
+    guideOverlay.value,
+    brandKit.value
+  )
+}
+
+async function handleOpenProjectFile(file: File) {
+  try {
+    const project = await parseProjectFile(file)
+    restoreProject(project)
+    updateWatermark(project.watermark)
+    if (project.brandKit) {
+      updateBrandKit(project.brandKit)
+    }
+    // Switch to text or templates tab to show elements
+    nextTick(() => {
+      activeTab.value = 'text'
+    })
+  } catch (err: any) {
+    alert(err.message || '导入工程文件失败')
+  }
+}
+
+function handleApplyBrandColor(color: string) {
+  if (activeText.value) {
+    updateElement(activeText.value.id, { fill: color })
+  } else if (activeSvg.value) {
+    updateElement(activeSvg.value.id, { fill: color })
+  }
+}
+
+async function handleStartBatch(images: BatchImageItem[], options: BatchExportOptions) {
+  const stage = canvasStageRef.value?.getStage()
+  if (!stage) return
+
+  selectElement(null)
+  isBatchProcessing.value = true
+  progressCurrent.value = 0
+  progressTotal.value = images.length
+  currentBatchStatus.value = '准备批量合成...'
+
+  const originalBaseImage = baseImage.value ? { ...baseImage.value } : null
+  const elementsLayer = stage.getChildren().find((l) => l.hasName('elements-layer') || stage.getChildren().indexOf(l) === 1)
+  const wasElementsVisible = elementsLayer ? elementsLayer.visible() : true
+
+  try {
+    if (options.mode === 'watermark-only' && elementsLayer) {
+      elementsLayer.visible(false)
+    }
+
+    const zip = new SimpleZip()
+    const ext = options.format === 'image/webp' ? 'webp' : options.format === 'image/png' ? 'png' : 'jpg'
+
+    for (let i = 0; i < images.length; i++) {
+      const item = images[i]
+      item.status = 'processing'
+      progressCurrent.value = i + 1
+      currentBatchStatus.value = `正在合成 (${i + 1}/${images.length}): ${item.name}`
+
+      // Temporarily swap base image
+      setBaseImage(item.src, 'cover')
+
+      // Allow Konva to redraw with new image
+      await nextTick()
+      await new Promise((resolve) => setTimeout(resolve, 200))
+
+      const canvas = getStageCanvas(stage, options.scale)
+      const blob = await canvasToBlob(canvas, options.format, options.quality)
+
+      const cleanName = item.name.replace(/\.[^.]+$/, '')
+      const outName = options.namingPattern === 'numbered'
+        ? `${String(i + 1).padStart(2, '0')}_${cleanName}.${ext}`
+        : `${cleanName}_TagGaze.${ext}`
+
+      await zip.addFile(outName, blob)
+      item.status = 'done'
+    }
+
+    currentBatchStatus.value = '正在压缩并打包 ZIP...'
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    const zipBlob = zip.generateBlob()
+
+    const url = URL.createObjectURL(zipBlob)
+    const a = document.createElement('a')
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    const ratioStr = currentPreset.value.ratio.replace(':', 'x')
+    a.href = url
+    a.download = `TagGaze-Batch-${ratioStr}-${dateStr}.zip`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    currentBatchStatus.value = '全部处理完成，ZIP 已自动下载！'
+    await new Promise((resolve) => setTimeout(resolve, 1200))
+    isBatchModalOpen.value = false
+  } catch (err) {
+    console.error('Batch export failed:', err)
+    alert('批量合成过程中出现错误，请检查上传图片')
+  } finally {
+    if (originalBaseImage) {
+      setBaseImage(originalBaseImage.src, originalBaseImage.fitMode || 'cover')
+    } else {
+      removeBaseImage()
+    }
+    if (elementsLayer) {
+      elementsLayer.visible(wasElementsVisible)
+    }
+    isBatchProcessing.value = false
+  }
+}
+
 // Global Keyboard shortcuts (Undo/Redo/Delete)
 function handleKeydown(e: KeyboardEvent) {
   const tag = (e.target as HTMLElement)?.tagName
@@ -208,10 +360,17 @@ onUnmounted(() => {
       :can-redo="canRedo"
       :watermark-enabled="watermark.enabled"
       :has-base-image="hasBaseImage"
+      :guide-overlay="guideOverlay"
+      :enable-snapping="enableSnapping"
       @change-preset="setPreset"
       @undo="undo"
       @redo="redo"
       @toggle-watermark="toggleWatermark()"
+      @change-guide-overlay="(m) => guideOverlay = m"
+      @toggle-snapping="toggleSnapping"
+      @save-project="handleSaveProject"
+      @open-project-file="handleOpenProjectFile"
+      @open-batch="isBatchModalOpen = true"
       @open-export="handleOpenExport"
       @trigger-upload="activeTab = 'image'"
     />
@@ -220,37 +379,55 @@ onUnmounted(() => {
     <div class="flex-1 flex overflow-hidden relative">
       <!-- Desktop Sidebar -->
       <Sidebar v-model:activeTab="activeTab" :has-base-image="hasBaseImage">
-        <!-- Tab 0: Base Image Manager -->
+        <!-- Tab 0: Templates & Layouts -->
+        <TemplatesPanel
+          v-if="activeTab === 'templates'"
+          :current-ratio="currentPreset.ratio"
+          @apply-template="handleApplyTemplate"
+        />
+
+        <!-- Tab 1: Base Image Manager -->
         <BaseImagePanel
-          v-if="activeTab === 'image'"
+          v-else-if="activeTab === 'image'"
           :base-image="baseImage"
           :canvas-bg-color="canvasBgColor"
+          :split-config="splitConfig"
           @upload-base-image="handleBaseImageUpload"
           @load-demo="handleLoadDemo"
           @update-fit-mode="updateBaseImageFit"
           @update-bg-color="(c) => canvasBgColor = c"
           @remove-base-image="removeBaseImage"
+          @update-filters="(f) => baseImage && updateElement(baseImage.id, f)"
+          @update-split-config="updateSplitConfig"
+          @set-split-image="setSplitImage"
+          @load-demo-split="loadDemoSplitImages"
         />
 
-        <!-- Tab 1: Typography -->
+        <!-- Tab 2: Typography -->
         <TextPanel
           v-else-if="activeTab === 'text'"
           :active-text="activeText"
           @add-text-tier="handleAddTextTier"
+          @add-promo-benefit="(p) => addPromoBenefit(p)"
           @update-text="(partial) => activeText && updateElement(activeText.id, partial)"
           @apply-preset="(p) => activeText && updateElement(activeText.id, p)"
         />
 
-        <!-- Tab 2: Assets & Badges -->
+        <!-- Tab 3: Assets & Badges -->
         <AssetsPanel
           v-else-if="activeTab === 'assets'"
           :active-svg="activeSvg"
+          :brand-kit="brandKit"
           @add-svg="(content, fill, w, h) => addSvg(content, fill, w, h)"
           @upload-logo="(src) => addSticker(src)"
           @update-svg-color="(fill) => activeSvg && updateElement(activeSvg.id, { fill })"
+          @add-callout-pin="addCalloutPin"
+          @update-brand-kit="updateBrandKit"
+          @add-brand-guarantee="addBrandGuarantee"
+          @apply-brand-color="handleApplyBrandColor"
         />
 
-        <!-- Tab 3: Watermark -->
+        <!-- Tab 4: Watermark -->
         <WatermarkPanel
           v-else-if="activeTab === 'watermark'"
           :watermark="watermark"
@@ -278,6 +455,9 @@ onUnmounted(() => {
           :watermark="watermark"
           :canvas-bg-color="canvasBgColor"
           :has-base-image="hasBaseImage"
+          :guide-overlay="guideOverlay"
+          :enable-snapping="enableSnapping"
+          :split-config="splitConfig"
           @select="handleSelectElement"
           @update-element="updateElement"
           @upload-base-image="handleBaseImageUpload"
@@ -290,21 +470,33 @@ onUnmounted(() => {
 
       <!-- Mobile & Tablet Bottom Drawer -->
       <BottomDrawer v-model:activeTab="activeTab" :has-base-image="hasBaseImage">
+        <TemplatesPanel
+          v-if="activeTab === 'templates'"
+          :current-ratio="currentPreset.ratio"
+          @apply-template="handleApplyTemplate"
+        />
+
         <BaseImagePanel
-          v-if="activeTab === 'image'"
+          v-else-if="activeTab === 'image'"
           :base-image="baseImage"
           :canvas-bg-color="canvasBgColor"
+          :split-config="splitConfig"
           @upload-base-image="handleBaseImageUpload"
           @load-demo="handleLoadDemo"
           @update-fit-mode="updateBaseImageFit"
           @update-bg-color="(c) => canvasBgColor = c"
           @remove-base-image="removeBaseImage"
+          @update-filters="(f) => baseImage && updateElement(baseImage.id, f)"
+          @update-split-config="updateSplitConfig"
+          @set-split-image="setSplitImage"
+          @load-demo-split="loadDemoSplitImages"
         />
 
         <TextPanel
           v-else-if="activeTab === 'text'"
           :active-text="activeText"
           @add-text-tier="handleAddTextTier"
+          @add-promo-benefit="(p) => addPromoBenefit(p)"
           @update-text="(partial) => activeText && updateElement(activeText.id, partial)"
           @apply-preset="(p) => activeText && updateElement(activeText.id, p)"
         />
@@ -312,9 +504,14 @@ onUnmounted(() => {
         <AssetsPanel
           v-else-if="activeTab === 'assets'"
           :active-svg="activeSvg"
+          :brand-kit="brandKit"
           @add-svg="(content, fill, w, h) => addSvg(content, fill, w, h)"
           @upload-logo="(src) => addSticker(src)"
           @update-svg-color="(fill) => activeSvg && updateElement(activeSvg.id, { fill })"
+          @add-callout-pin="addCalloutPin"
+          @update-brand-kit="updateBrandKit"
+          @add-brand-guarantee="addBrandGuarantee"
+          @apply-brand-color="handleApplyBrandColor"
         />
 
         <WatermarkPanel
@@ -335,6 +532,17 @@ onUnmounted(() => {
       @change-options="handleExportChange"
       @auto-fit-target="handleAutoFitTarget"
       @download="handleDownload"
+    />
+
+    <!-- Batch Export Modal -->
+    <BatchExportModal
+      :is-open="isBatchModalOpen"
+      :is-processing="isBatchProcessing"
+      :progress-current="progressCurrent"
+      :progress-total="progressTotal"
+      :current-status-text="currentBatchStatus"
+      @close="isBatchModalOpen = false"
+      @start-batch="handleStartBatch"
     />
   </div>
 </template>

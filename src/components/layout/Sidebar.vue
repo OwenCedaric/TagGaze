@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Image as ImageIcon, Type, Sparkles, ShieldCheck } from 'lucide-vue-next'
+import { LayoutTemplate, Image as ImageIcon, Type, Sparkles, ShieldCheck } from 'lucide-vue-next'
 
-export type TabType = 'image' | 'text' | 'assets' | 'watermark'
+export type TabType = 'templates' | 'image' | 'text' | 'assets' | 'watermark'
 
 defineProps<{
   activeTab: TabType
@@ -15,8 +15,18 @@ const emit = defineEmits<{
 
 <template>
   <aside class="hidden md:flex flex-col w-80 lg:w-96 border-r border-chronicle-border bg-chronicle-surface-raised z-20 shrink-0 shadow-xs">
-    <!-- Chronicle 4-Tab Nav Strip in Light Palette -->
-    <div class="grid grid-cols-4 border-b border-chronicle-border p-1.5 gap-1 bg-chronicle-surface">
+    <!-- Chronicle 5-Tab Nav Strip in Light Palette -->
+    <div class="grid grid-cols-5 border-b border-chronicle-border p-1.5 gap-1 bg-chronicle-surface">
+      <button
+        @click="emit('update:activeTab', 'templates')"
+        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition"
+        :class="activeTab === 'templates' ? 'bg-white text-chronicle-primary font-medium shadow-xs border border-chronicle-border' : 'text-chronicle-secondary hover:text-chronicle-primary hover:bg-white/60'"
+        title="电商与社媒一键排版模板"
+      >
+        <LayoutTemplate class="w-3.5 h-3.5" :class="activeTab === 'templates' ? 'text-chronicle-accent' : ''" />
+        <span>模板</span>
+      </button>
+
       <button
         @click="emit('update:activeTab', 'image')"
         class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition relative"

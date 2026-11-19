@@ -93,9 +93,9 @@ export const TEXT_TIERS: TextTier[] = [
   },
   {
     id: 'price',
-    label: '价格 / 促销信息条',
-    desc: '高对比度价格信息条',
-    defaultText: '券后 ¥199 起  限时赠正装替换装',
+    label: '营销利益 / 促销标签条',
+    desc: '高对比度营销利益胶囊',
+    defaultText: '限时买一送一 · 现货顺丰速发',
     fontFamily: "'Montserrat', 'Noto Sans SC', sans-serif",
     fontSize: 40,
     fontWeight: '700',
@@ -117,6 +117,88 @@ export const TEXT_TIERS: TextTier[] = [
     fill: '#757d8a',
     align: 'center',
     defaultY: 1440
+  }
+]
+
+// 电商与社媒高转化营销利益胶囊规范 (Promo Benefit Capsules - 杜绝货币符号)
+export interface PromoBenefitPreset {
+  id: string
+  title: string
+  badgeText: string // 左侧徽标
+  benefitText: string // 右侧核心利益
+  fullText: string
+  fill: string
+  backgroundColor: string
+  shadowColor?: string
+  backgroundRadius?: number
+}
+
+export const PROMO_BENEFIT_PRESETS: PromoBenefitPreset[] = [
+  {
+    id: 'b-buy1get1',
+    title: '买一赠一',
+    badgeText: '限时特惠',
+    benefitText: '买一赠一 · 现货速发',
+    fullText: '【限时特惠】买一赠一 · 现货速发',
+    fill: '#ffffff',
+    backgroundColor: '#e11d48', // 大促红
+    shadowColor: 'rgba(225, 29, 72, 0.35)',
+    backgroundRadius: 6
+  },
+  {
+    id: 'b-halfprice',
+    title: '第2件半价',
+    badgeText: '今日专享',
+    benefitText: '第二件半价 · 顺丰直达',
+    fullText: '【今日专享】第二件半价 · 顺丰直达',
+    fill: '#ffffff',
+    backgroundColor: '#f59e0b', // 活力橙
+    shadowColor: 'rgba(245, 158, 11, 0.35)',
+    backgroundRadius: 6
+  },
+  {
+    id: 'b-directsale',
+    title: '直降立减',
+    badgeText: '官方大促',
+    benefitText: '直降立减 · 赠正装替换装',
+    fullText: '【官方大促】直降立减 · 赠正装替换装',
+    fill: '#ffffff',
+    backgroundColor: '#3d4451', // 高级深灰
+    shadowColor: 'rgba(0, 0, 0, 0.25)',
+    backgroundRadius: 6
+  },
+  {
+    id: 'b-freemail',
+    title: '顺丰正品',
+    badgeText: '品质承诺',
+    benefitText: '顺丰包邮 · 7天无理由退换',
+    fullText: '【品质承诺】顺丰包邮 · 7天无理由退换',
+    fill: '#ffffff',
+    backgroundColor: '#10b981', // 信任绿
+    shadowColor: 'rgba(16, 185, 129, 0.3)',
+    backgroundRadius: 6
+  },
+  {
+    id: 'b-giftpack',
+    title: '买大送小',
+    badgeText: '超值加赠',
+    benefitText: '买大送小 · 随单附赠体验装',
+    fullText: '【超值加赠】买大送小 · 随单附赠体验装',
+    fill: '#ffffff',
+    backgroundColor: '#82a1b9', // 冰川蓝
+    shadowColor: 'rgba(130, 161, 185, 0.3)',
+    backgroundRadius: 6
+  },
+  {
+    id: 'b-hotseed',
+    title: '社媒种草',
+    badgeText: '小红书精选',
+    benefitText: '博主实测力荐 · 闭眼入不踩雷',
+    fullText: '【小红书精选】博主实测力荐 · 闭眼入不踩雷',
+    fill: '#ffffff',
+    backgroundColor: '#e11d48',
+    shadowColor: 'rgba(225, 29, 72, 0.35)',
+    backgroundRadius: 6
   }
 ]
 
