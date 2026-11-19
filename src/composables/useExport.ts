@@ -10,11 +10,12 @@ export function useExport() {
   let estimateTimer: ReturnType<typeof setTimeout> | null = null
 
   /**
-   * Convert Konva stage into an HTMLCanvasElement
+   * Convert Konva stage into an HTMLCanvasElement at actual preset resolution
    */
   function getStageCanvas(stage: Konva.Stage, scale = 1): HTMLCanvasElement {
+    const stageScale = stage.scaleX() || 1
     return stage.toCanvas({
-      pixelRatio: scale
+      pixelRatio: (1 / stageScale) * scale
     })
   }
 

@@ -2,7 +2,6 @@
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import Konva from 'konva'
 import { Upload, Sparkles, Image as ImageIcon } from 'lucide-vue-next'
-import { generateDemoHeroImage } from '@/constants/demoImage'
 import type { CanvasDimensions, CanvasElement, TextElement, ImageElement, SvgElement, WatermarkConfig } from '@/types'
 
 const props = defineProps<{
@@ -19,6 +18,9 @@ const emit = defineEmits<{
   (e: 'updateElement', id: string, partial: Partial<CanvasElement>): void
   (e: 'uploadBaseImage', src: string): void
   (e: 'editElementText', id: string): void
+  (e: 'updateWatermark', partial: Partial<WatermarkConfig>): void
+  (e: 'selectWatermark'): void
+  (e: 'loadDemo'): void
 }>()
 
 const viewportRef = ref<HTMLDivElement | null>(null)
@@ -37,20 +39,51 @@ let transformer: Konva.Transformer | null = null
 
 const imageCache = new Map<string, HTMLImageElement>()
 
+/**
+ * Loads an image from URL or DataURI safely with caching and no CORS issues for data/blob URLs
+ */
 function getLoadedImage(src: string): Promise<HTMLImageElement> {
   if (imageCache.has(src)) {
     return Promise.resolve(imageCache.get(src)!)
   }
   return new Promise((resolve, reject) => {
     const img = new Image()
-    img.crossOrigin = 'anonymous'
+    if (src.startsWith('http://') || src.startsWith('https://')) {
+      img.crossOrigin = 'anonymous'
+    }
     img.onload = () => {
       imageCache.set(src, img)
       resolve(img)
     }
-    img.onerror = reject
+    img.onerror = (err) => {
+      console.error('Failed to load image:', src.slice(0, 80), err)
+      reject(err)
+    }
     img.src = src
   })
+}
+
+/**
+ * Convert SVG content into a valid UTF-8 SVG DataURI with explicit XMLNS and viewBox dimensions
+ */
+function prepareSvgDataUrl(svgContent: string, fill: string): string {
+  let str = svgContent.replace(/currentColor/g, fill)
+  if (!str.includes('xmlns=')) {
+    str = str.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"')
+  }
+  const vb = str.match(/viewBox=["']([\d.\s-]+)["']/)
+  if (vb) {
+    const parts = vb[1].trim().split(/\s+/).map(Number)
+    if (parts.length === 4 && parts[2] && parts[3]) {
+      if (!str.match(/<svg[^>]*\bwidth=/)) {
+        str = str.replace('<svg', `<svg width="${parts[2]}"`)
+      }
+      if (!str.match(/<svg[^>]*\bheight=/)) {
+        str = str.replace('<svg', `<svg height="${parts[3]}"`)
+      }
+    }
+  }
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(str)}`
 }
 
 function updateStageDimensions() {
@@ -85,7 +118,7 @@ function initKonva() {
 
   bgLayer = new Konva.Layer()
   elementsLayer = new Konva.Layer()
-  watermarkLayer = new Konva.Layer({ listening: false })
+  watermarkLayer = new Konva.Layer()
 
   // Chronicle Light Styled Transformer (Accent #82a1b9, Base Surface #ffffff)
   transformer = new Konva.Transformer({
@@ -156,14 +189,14 @@ async function renderAll() {
           name: imgEl.isBaseImage ? 'base-image' : 'sticker-image'
         })
 
-        bindElementEvents(kImage, el.id)
-        if (imgEl.isBaseImage) {
-          bgLayer.add(kImage)
-        } else {
+        if (!imgEl.isBaseImage) {
+          bindElementEvents(kImage, el.id)
           elementsLayer.add(kImage)
+        } else {
+          bgLayer.add(kImage)
         }
       } catch (err) {
-        console.error('Failed to load image:', err)
+        console.error('Failed to load image element:', err)
       }
     } else if (el.type === 'text') {
       const textEl = el as TextElement
@@ -196,13 +229,13 @@ async function renderAll() {
       })
 
       if (textEl.backgroundColor) {
-        const bgRect = new Konva.Rect({
+        const textBgRect = new Konva.Rect({
           width: kText.width(),
           height: kText.height(),
           fill: textEl.backgroundColor,
           cornerRadius: textEl.backgroundRadius || 2
         })
-        group.add(bgRect)
+        group.add(textBgRect)
       }
 
       group.add(kText)
@@ -215,10 +248,9 @@ async function renderAll() {
       elementsLayer.add(group)
     } else if (el.type === 'svg') {
       const svgEl = el as SvgElement
-      const blob = new Blob([svgEl.svgContent.replace(/currentColor/g, svgEl.fill)], { type: 'image/svg+xml' })
-      const url = URL.createObjectURL(blob)
+      const dataUrl = prepareSvgDataUrl(svgEl.svgContent, svgEl.fill)
       try {
-        const imgObj = await getLoadedImage(url)
+        const imgObj = await getLoadedImage(dataUrl)
         const kSvg = new Konva.Image({
           id: el.id,
           image: imgObj,
@@ -230,7 +262,8 @@ async function renderAll() {
           scaleX: el.scaleX,
           scaleY: el.scaleY,
           opacity: el.opacity,
-          draggable: !el.locked
+          draggable: !el.locked,
+          name: 'svg-badge'
         })
         bindElementEvents(kSvg, el.id)
         elementsLayer.add(kSvg)
@@ -240,41 +273,117 @@ async function renderAll() {
     }
   }
 
-  // 3. Render Watermark
+  // 3. Render Watermark (Supports Text or Image, and Free Dragging in Single Mode)
   watermarkLayer.destroyChildren()
-  if (props.watermark.enabled && props.watermark.text) {
+  if (props.watermark.enabled) {
     const wm = props.watermark
-    if (wm.mode === 'single') {
-      const text = new Konva.Text({
-        x: props.preset.width / 2,
-        y: props.preset.height / 2,
-        text: wm.text,
-        fontSize: wm.fontSize,
-        fill: wm.color,
-        opacity: wm.opacity,
-        rotation: wm.angle,
-        fontFamily: "'Noto Sans SC', sans-serif",
-        align: 'center'
-      })
-      text.offsetX(text.width() / 2)
-      text.offsetY(text.height() / 2)
-      watermarkLayer.add(text)
-    } else {
-      const stepX = wm.gapX || 280
-      const stepY = wm.gapY || 200
-      for (let x = -100; x < props.preset.width + 300; x += stepX) {
-        for (let y = -100; y < props.preset.height + 300; y += stepY) {
-          const text = new Konva.Text({
-            x,
-            y,
+    const isImage = wm.type === 'image' && !!wm.imageSrc
+    const hasText = !!wm.text && wm.text.trim().length > 0
+
+    if (isImage || hasText) {
+      if (wm.mode === 'single') {
+        const posX = wm.x !== undefined ? wm.x : props.preset.width / 2
+        const posY = wm.y !== undefined ? wm.y : props.preset.height / 2
+
+        if (isImage && wm.imageSrc) {
+          try {
+            const imgObj = await getLoadedImage(wm.imageSrc)
+            const natW = imgObj.naturalWidth || imgObj.width || 100
+            const natH = imgObj.naturalHeight || imgObj.height || 100
+            const targetW = wm.imageWidth || 160
+            const targetH = wm.imageHeight || Math.round(targetW * (natH / natW))
+
+            const kWatermarkImg = new Konva.Image({
+              id: 'watermark-node',
+              image: imgObj,
+              x: posX,
+              y: posY,
+              width: targetW,
+              height: targetH,
+              offsetX: targetW / 2,
+              offsetY: targetH / 2,
+              opacity: wm.opacity,
+              rotation: wm.angle,
+              draggable: true,
+              listening: true
+            })
+            bindWatermarkEvents(kWatermarkImg)
+            watermarkLayer.add(kWatermarkImg)
+          } catch (e) {
+            console.error('Failed to render image watermark:', e)
+          }
+        } else {
+          // Text Watermark
+          const kWatermarkText = new Konva.Text({
+            id: 'watermark-node',
+            x: posX,
+            y: posY,
             text: wm.text,
             fontSize: wm.fontSize,
             fill: wm.color,
             opacity: wm.opacity,
             rotation: wm.angle,
-            fontFamily: "'Noto Sans SC', sans-serif"
+            fontFamily: "'Noto Sans SC', sans-serif",
+            align: 'center',
+            draggable: true,
+            listening: true
           })
-          watermarkLayer.add(text)
+          kWatermarkText.offsetX(kWatermarkText.width() / 2)
+          kWatermarkText.offsetY(kWatermarkText.height() / 2)
+          bindWatermarkEvents(kWatermarkText)
+          watermarkLayer.add(kWatermarkText)
+        }
+      } else {
+        // Grid Tiling Mode
+        if (isImage && wm.imageSrc) {
+          try {
+            const imgObj = await getLoadedImage(wm.imageSrc)
+            const natW = imgObj.naturalWidth || imgObj.width || 100
+            const natH = imgObj.naturalHeight || imgObj.height || 100
+            const targetW = wm.imageWidth || 140
+            const targetH = wm.imageHeight || Math.round(targetW * (natH / natW))
+            const stepX = wm.gapX || 280
+            const stepY = wm.gapY || 220
+
+            for (let x = -100; x < props.preset.width + 300; x += stepX) {
+              for (let y = -100; y < props.preset.height + 300; y += stepY) {
+                const kImg = new Konva.Image({
+                  x,
+                  y,
+                  image: imgObj,
+                  width: targetW,
+                  height: targetH,
+                  offsetX: targetW / 2,
+                  offsetY: targetH / 2,
+                  opacity: wm.opacity,
+                  rotation: wm.angle,
+                  listening: false
+                })
+                watermarkLayer.add(kImg)
+              }
+            }
+          } catch (e) {
+            console.error('Failed to render grid image watermark:', e)
+          }
+        } else {
+          const stepX = wm.gapX || 280
+          const stepY = wm.gapY || 200
+          for (let x = -100; x < props.preset.width + 300; x += stepX) {
+            for (let y = -100; y < props.preset.height + 300; y += stepY) {
+              const text = new Konva.Text({
+                x,
+                y,
+                text: wm.text,
+                fontSize: wm.fontSize,
+                fill: wm.color,
+                opacity: wm.opacity,
+                rotation: wm.angle,
+                fontFamily: "'Noto Sans SC', sans-serif",
+                listening: false
+              })
+              watermarkLayer.add(text)
+            }
+          }
         }
       }
     }
@@ -288,12 +397,28 @@ async function renderAll() {
 }
 
 function bindElementEvents(node: Konva.Node, id: string) {
+  node.on('mouseenter', () => {
+    const el = props.elements.find((e) => e.id === id)
+    if (!el?.locked && stage) {
+      stage.container().style.cursor = 'move'
+    }
+  })
+
+  node.on('mouseleave', () => {
+    if (stage) stage.container().style.cursor = 'default'
+  })
+
   node.on('click tap', (e) => {
     e.cancelBubble = true
     emit('select', id)
   })
 
+  node.on('dragstart', () => {
+    if (stage) stage.container().style.cursor = 'grabbing'
+  })
+
   node.on('dragend', () => {
+    if (stage) stage.container().style.cursor = 'default'
     emit('updateElement', id, {
       x: Math.round(node.x()),
       y: Math.round(node.y())
@@ -307,6 +432,33 @@ function bindElementEvents(node: Konva.Node, id: string) {
       rotation: Math.round(node.rotation()),
       scaleX: node.scaleX(),
       scaleY: node.scaleY()
+    })
+  })
+}
+
+function bindWatermarkEvents(node: Konva.Node) {
+  node.on('mouseenter', () => {
+    if (stage) stage.container().style.cursor = 'move'
+  })
+
+  node.on('mouseleave', () => {
+    if (stage) stage.container().style.cursor = 'default'
+  })
+
+  node.on('click tap', (e) => {
+    e.cancelBubble = true
+    emit('selectWatermark')
+  })
+
+  node.on('dragstart', () => {
+    if (stage) stage.container().style.cursor = 'grabbing'
+  })
+
+  node.on('dragend', () => {
+    if (stage) stage.container().style.cursor = 'default'
+    emit('updateWatermark', {
+      x: Math.round(node.x()),
+      y: Math.round(node.y())
     })
   })
 }
@@ -394,10 +546,7 @@ function handlePaste(e: ClipboardEvent) {
 }
 
 function handleLoadDemo() {
-  const demoUrl = generateDemoHeroImage()
-  if (demoUrl) {
-    emit('uploadBaseImage', demoUrl)
-  }
+  emit('loadDemo')
 }
 
 function handleResize() {

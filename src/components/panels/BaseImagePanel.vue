@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Upload, Sparkles, Image as ImageIcon, Trash2, Crop, Maximize2 } from 'lucide-vue-next'
-import { generateDemoHeroImage } from '@/constants/demoImage'
 import type { ImageElement } from '@/types'
 
 defineProps<{
@@ -11,6 +10,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'uploadBaseImage', src: string): void
+  (e: 'loadDemo'): void
   (e: 'updateFitMode', mode: 'cover' | 'contain'): void
   (e: 'updateBgColor', color: string): void
   (e: 'removeBaseImage'): void
@@ -34,10 +34,7 @@ function handleFileSelect(e: Event) {
 }
 
 function handleLoadDemo() {
-  const demoUrl = generateDemoHeroImage()
-  if (demoUrl) {
-    emit('uploadBaseImage', demoUrl)
-  }
+  emit('loadDemo')
 }
 </script>
 

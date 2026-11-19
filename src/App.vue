@@ -48,7 +48,8 @@ const {
   duplicateElement,
   bringForward,
   sendBackward,
-  toggleLock
+  toggleLock,
+  loadDemoTemplate
 } = useCanvas()
 
 // Watermark Composable
@@ -91,6 +92,13 @@ function handleBaseImageUpload(src: string) {
   // Automatically guide user to text typography after loading base image
   nextTick(() => {
     activeTab.value = 'text'
+  })
+}
+
+function handleLoadDemo() {
+  loadDemoTemplate()
+  nextTick(() => {
+    activeTab.value = 'assets'
   })
 }
 
@@ -218,6 +226,7 @@ onUnmounted(() => {
           :base-image="baseImage"
           :canvas-bg-color="canvasBgColor"
           @upload-base-image="handleBaseImageUpload"
+          @load-demo="handleLoadDemo"
           @update-fit-mode="updateBaseImageFit"
           @update-bg-color="(c) => canvasBgColor = c"
           @remove-base-image="removeBaseImage"
@@ -236,7 +245,7 @@ onUnmounted(() => {
         <AssetsPanel
           v-else-if="activeTab === 'assets'"
           :active-svg="activeSvg"
-          @add-svg="addSvg"
+          @add-svg="(content, fill, w, h) => addSvg(content, fill, w, h)"
           @upload-logo="(src) => addSticker(src)"
           @update-svg-color="(fill) => activeSvg && updateElement(activeSvg.id, { fill })"
         />
@@ -273,6 +282,9 @@ onUnmounted(() => {
           @update-element="updateElement"
           @upload-base-image="handleBaseImageUpload"
           @edit-element-text="handleEditElementText"
+          @update-watermark="updateWatermark"
+          @select-watermark="activeTab = 'watermark'"
+          @load-demo="handleLoadDemo"
         />
       </main>
 
@@ -283,6 +295,7 @@ onUnmounted(() => {
           :base-image="baseImage"
           :canvas-bg-color="canvasBgColor"
           @upload-base-image="handleBaseImageUpload"
+          @load-demo="handleLoadDemo"
           @update-fit-mode="updateBaseImageFit"
           @update-bg-color="(c) => canvasBgColor = c"
           @remove-base-image="removeBaseImage"
@@ -299,7 +312,7 @@ onUnmounted(() => {
         <AssetsPanel
           v-else-if="activeTab === 'assets'"
           :active-svg="activeSvg"
-          @add-svg="addSvg"
+          @add-svg="(content, fill, w, h) => addSvg(content, fill, w, h)"
           @upload-logo="(src) => addSticker(src)"
           @update-svg-color="(fill) => activeSvg && updateElement(activeSvg.id, { fill })"
         />

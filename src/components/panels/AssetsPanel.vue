@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Upload } from 'lucide-vue-next'
+import { Upload, Sparkles, Move } from 'lucide-vue-next'
 import { SVG_ASSETS } from '@/constants/assets'
 import type { SvgElement } from '@/types'
 
@@ -9,7 +9,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'addSvg', svgContent: string, defaultFill: string): void
+  (e: 'addSvg', svgContent: string, defaultFill: string, defaultWidth?: number, defaultHeight?: number): void
   (e: 'uploadLogo', src: string): void
   (e: 'updateSvgColor', fill: string): void
 }>()
@@ -57,7 +57,10 @@ function handleFileUpload(e: Event) {
 
     <!-- Active SVG Color Picker (if selected) -->
     <div v-if="activeSvg" class="p-3 bg-white border border-chronicle-border rounded-xl flex items-center justify-between shadow-xs">
-      <span class="font-medium text-chronicle-primary">当前徽章色彩</span>
+      <div class="flex items-center gap-1.5">
+        <Sparkles class="w-3.5 h-3.5 text-chronicle-accent" />
+        <span class="font-medium text-chronicle-primary">当前徽章色彩</span>
+      </div>
       <div class="flex items-center gap-2">
         <button
           @click="emit('updateSvgColor', '#3d4451')"
@@ -74,6 +77,11 @@ function handleFileUpload(e: Event) {
           title="纯白"
           class="w-5 h-5 rounded-full border border-chronicle-border bg-white shadow-xs"
         ></button>
+        <button
+          @click="emit('updateSvgColor', '#e11d48')"
+          title="绯红"
+          class="w-5 h-5 rounded-full border border-chronicle-border bg-[#e11d48]"
+        ></button>
         <input
           type="color"
           :value="activeSvg.fill"
@@ -85,18 +93,24 @@ function handleFileUpload(e: Event) {
 
     <!-- Built-in eCommerce Assets -->
     <div>
-      <label class="block text-[11px] font-medium text-chronicle-primary mb-3 font-serif">
-        商业信任徽章与指示标识
-      </label>
+      <div class="flex items-center justify-between mb-3">
+        <label class="text-[11px] font-medium text-chronicle-primary font-serif">
+          商业信任徽章与指示标识
+        </label>
+        <span class="text-[10px] text-chronicle-accent flex items-center gap-1 font-light">
+          <Move class="w-3 h-3" /> 点击添加，鼠标可自由移动
+        </span>
+      </div>
+
       <div class="grid grid-cols-2 gap-2.5">
         <button
           v-for="asset in SVG_ASSETS"
           :key="asset.id"
-          @click="emit('addSvg', asset.svg, asset.defaultFill)"
+          @click="emit('addSvg', asset.svg, asset.defaultFill, asset.defaultWidth, asset.defaultHeight)"
           class="p-3.5 rounded-xl border border-chronicle-border bg-white hover:border-chronicle-accent hover:bg-chronicle-fill flex flex-col items-center justify-center gap-2.5 transition group shadow-xs"
         >
           <div
-            class="w-10 h-10 flex items-center justify-center text-chronicle-primary group-hover:scale-105 transition"
+            class="w-12 h-10 flex items-center justify-center text-chronicle-primary group-hover:scale-105 transition"
             :style="{ color: asset.defaultFill }"
             v-html="asset.svg"
           ></div>
@@ -104,6 +118,13 @@ function handleFileUpload(e: Event) {
             {{ asset.name }}
           </span>
         </button>
+      </div>
+
+      <div class="mt-4 p-3 rounded-lg bg-chronicle-fill border border-chronicle-border/60 text-[11px] text-chronicle-secondary font-light space-y-1">
+        <div class="font-medium text-chronicle-primary">💡 徽章排版交互说明：</div>
+        <div>• 点击任意徽章即可添加到图片画布中</div>
+        <div>• 鼠标悬停可直接拖拽调整位置，拖拽四个控制角可等比缩放</div>
+        <div>• 选中徽章后，可使用上方浮动工具栏进行层级调整、复制与删除</div>
       </div>
     </div>
   </div>

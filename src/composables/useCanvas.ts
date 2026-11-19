@@ -3,6 +3,8 @@ import { get, set } from 'idb-keyval'
 import type { CanvasDimensions, CanvasElement, TextElement, ImageElement, SvgElement } from '@/types'
 import { CANVAS_PRESETS } from '@/constants/presets'
 import { TEXT_TIERS } from '@/constants/fonts'
+import { SVG_ASSETS } from '@/constants/assets'
+import { generateDemoHeroImage } from '@/constants/demoImage'
 import { useHistory } from './useHistory'
 
 const STORAGE_KEY = 'taggaze_project_state'
@@ -51,8 +53,8 @@ export function useCanvas() {
   async function persistState() {
     try {
       await set(STORAGE_KEY, {
-        elements: elements.value,
-        preset: currentPreset.value,
+        elements: JSON.parse(JSON.stringify(elements.value)),
+        preset: JSON.parse(JSON.stringify(currentPreset.value)),
         canvasBgColor: canvasBgColor.value,
         updatedAt: Date.now()
       })
@@ -287,16 +289,50 @@ export function useCanvas() {
     return imgEl
   }
 
-  function addSvg(svgContent: string, fill = '#82a1b9') {
+  function addSvg(
+    svgContent: string,
+    fill = '#82a1b9',
+    customWidth?: number,
+    customHeight?: number,
+    customX?: number,
+    customY?: number
+  ) {
+    let width = customWidth || 120
+    let height = customHeight || 120
+
+    // Auto-calculate dimensions from viewBox if not passed explicitly
+    if (!customWidth || !customHeight) {
+      const vbMatch = svgContent.match(/viewBox=["']([\d.\s-]+)["']/)
+      if (vbMatch) {
+        const parts = vbMatch[1].trim().split(/\s+/).map(Number)
+        if (parts.length === 4 && parts[2] && parts[3]) {
+          const aspect = parts[2] / parts[3]
+          if (aspect >= 3) {
+            width = 200
+            height = Math.round(200 / aspect)
+          } else if (aspect <= 0.5) {
+            height = 140
+            width = Math.round(140 * aspect)
+          } else {
+            width = 110
+            height = Math.round(110 / aspect)
+          }
+        }
+      }
+    }
+
+    const posX = customX !== undefined ? customX : Math.round((currentPreset.value.width - width) / 2)
+    const posY = customY !== undefined ? customY : Math.round(currentPreset.value.height * 0.72)
+
     const svgEl: SvgElement = {
       id: 'svg_' + Date.now() + Math.random().toString(36).slice(2, 6),
       type: 'svg',
       svgContent,
       fill,
-      x: currentPreset.value.width / 2 - 90,
-      y: currentPreset.value.height * 0.75,
-      width: 180,
-      height: 60,
+      x: posX,
+      y: posY,
+      width,
+      height,
       rotation: 0,
       scaleX: 1,
       scaleY: 1,
@@ -309,6 +345,66 @@ export function useCanvas() {
     selectedId.value = svgEl.id
     saveSnapshot()
     return svgEl
+  }
+
+  function loadDemoTemplate() {
+    const demoUrl = generateDemoHeroImage()
+    if (!demoUrl) return
+
+    const img = new Image()
+    img.onload = () => {
+      const baseEl: ImageElement = {
+        id: 'base_img_' + Date.now(),
+        type: 'image',
+        src: demoUrl,
+        isBaseImage: true,
+        naturalWidth: img.naturalWidth,
+        naturalHeight: img.naturalHeight,
+        fitMode: 'cover',
+        x: 0,
+        y: 0,
+        width: currentPreset.value.width,
+        height: currentPreset.value.height,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+        opacity: 1,
+        locked: isBaseImageLocked.value,
+        zIndex: 0
+      }
+      calibrateBaseImageSize(baseEl, 'cover')
+
+      elements.value = [baseEl]
+
+      // 1. Add Marketing Hero title
+      const heroTier = TEXT_TIERS.find((t) => t.id === 'hero')
+      if (heroTier) {
+        addText('hero')
+      }
+
+      // 2. Add Default Badge: Five Stars Review
+      const defaultBadge = SVG_ASSETS.find((a) => a.id === 'badge-5stars') || SVG_ASSETS[0]
+      if (defaultBadge) {
+        addSvg(
+          defaultBadge.svg,
+          defaultBadge.defaultFill,
+          defaultBadge.defaultWidth,
+          defaultBadge.defaultHeight,
+          Math.round((currentPreset.value.width - (defaultBadge.defaultWidth || 200)) / 2),
+          1180
+        )
+      }
+
+      // 3. Add Price bar
+      const priceTier = TEXT_TIERS.find((t) => t.id === 'price')
+      if (priceTier) {
+        addText('price')
+      }
+
+      selectedId.value = null
+      saveSnapshot()
+    }
+    img.src = demoUrl
   }
 
   function updateElement(id: string, partial: Partial<CanvasElement>) {
@@ -401,6 +497,7 @@ export function useCanvas() {
     duplicateElement,
     bringForward,
     sendBackward,
-    toggleLock
+    toggleLock,
+    loadDemoTemplate
   }
 }

@@ -63,9 +63,15 @@ export interface SvgElement extends BaseElement {
 
 export type CanvasElement = TextElement | ImageElement | SvgElement
 
+export type WatermarkType = 'text' | 'image'
+
 export interface WatermarkConfig {
   enabled: boolean
+  type?: WatermarkType // 'text' | 'image', default 'text'
   text: string
+  imageSrc?: string // Data URL or URL for image watermark
+  imageWidth?: number // Width in px for image watermark (default 160)
+  imageHeight?: number // Height in px for image watermark
   mode: 'single' | 'grid'
   opacity: number
   fontSize: number
@@ -73,6 +79,8 @@ export interface WatermarkConfig {
   color: string
   gapX: number
   gapY: number
+  x?: number // Draggable X coordinate for single watermark (default: center)
+  y?: number // Draggable Y coordinate for single watermark (default: center)
 }
 
 export interface ExportOptions {
