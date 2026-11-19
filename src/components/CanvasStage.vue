@@ -539,19 +539,19 @@ function renderGuides() {
       y: 0,
       width: W,
       height: topH,
-      fill: 'rgba(239, 68, 68, 0.08)',
-      stroke: 'rgba(239, 68, 68, 0.45)',
-      strokeWidth: 2,
-      dash: [8, 6]
+      fill: 'rgba(71, 85, 105, 0.03)',
+      stroke: 'rgba(100, 116, 139, 0.35)',
+      strokeWidth: 1,
+      dash: [4, 4]
     })
     const topLabel = new Konva.Text({
       x: 24,
       y: 20,
-      text: '📕 小红书顶部状态与导航避让区 (14%)',
-      fontSize: Math.max(14, Math.round(W * 0.024)),
-      fill: '#ef4444',
+      text: '小红书顶部状态与导航避让区 (14%)',
+      fontSize: Math.max(12, Math.round(W * 0.02)),
+      fill: '#64748b',
       fontFamily: "'Noto Sans SC', sans-serif",
-      fontStyle: 'bold'
+      fontStyle: 'normal'
     })
     guidesLayer.add(topZone, topLabel)
 
@@ -563,19 +563,19 @@ function renderGuides() {
       y: bottomY,
       width: W,
       height: bottomH,
-      fill: 'rgba(239, 68, 68, 0.08)',
-      stroke: 'rgba(239, 68, 68, 0.45)',
-      strokeWidth: 2,
-      dash: [8, 6]
+      fill: 'rgba(71, 85, 105, 0.03)',
+      stroke: 'rgba(100, 116, 139, 0.35)',
+      strokeWidth: 1,
+      dash: [4, 4]
     })
     const bottomLabel = new Konva.Text({
       x: 24,
       y: bottomY + 16,
-      text: '📕 小红书底部互动栏避让区 (赞/藏/评/作者信息 18%)',
-      fontSize: Math.max(14, Math.round(W * 0.024)),
-      fill: '#ef4444',
+      text: '小红书底部互动栏避让区 (赞/藏/评/作者信息 18%)',
+      fontSize: Math.max(12, Math.round(W * 0.02)),
+      fill: '#64748b',
       fontFamily: "'Noto Sans SC', sans-serif",
-      fontStyle: 'bold'
+      fontStyle: 'normal'
     })
     guidesLayer.add(bottomZone, bottomLabel)
 
@@ -586,18 +586,18 @@ function renderGuides() {
       y: topH + 12,
       width: W - safeMarginX * 2,
       height: bottomY - topH - 24,
-      stroke: 'rgba(16, 185, 129, 0.65)',
-      strokeWidth: 2,
-      dash: [6, 6]
+      stroke: 'rgba(14, 165, 233, 0.45)',
+      strokeWidth: 1,
+      dash: [4, 4]
     })
     const safeLabel = new Konva.Text({
       x: safeMarginX + 16,
       y: topH + 22,
-      text: '✨ 核心视觉与营销文案黄金安全区',
-      fontSize: Math.max(13, Math.round(W * 0.022)),
-      fill: '#10b981',
+      text: '核心视觉与营销文案黄金安全区',
+      fontSize: Math.max(12, Math.round(W * 0.02)),
+      fill: '#0284c7',
       fontFamily: "'Noto Sans SC', sans-serif",
-      fontStyle: 'bold'
+      fontStyle: 'normal'
     })
     guidesLayer.add(safeZone, safeLabel)
   } else if (mode === 'video916') {
@@ -612,19 +612,19 @@ function renderGuides() {
       y: 0,
       width: W,
       height: topH,
-      fill: 'rgba(245, 158, 11, 0.08)',
-      stroke: 'rgba(245, 158, 11, 0.5)',
-      strokeWidth: 2,
-      dash: [8, 6]
+      fill: 'rgba(71, 85, 105, 0.03)',
+      stroke: 'rgba(100, 116, 139, 0.35)',
+      strokeWidth: 1,
+      dash: [4, 4]
     })
     const topLabel = new Konva.Text({
       x: 24,
       y: 18,
-      text: '🎵 短视频顶部状态避让区 (12%)',
-      fontSize: Math.max(14, Math.round(W * 0.024)),
-      fill: '#f59e0b',
+      text: '短视频顶部状态避让区 (12%)',
+      fontSize: Math.max(12, Math.round(W * 0.02)),
+      fill: '#64748b',
       fontFamily: "'Noto Sans SC', sans-serif",
-      fontStyle: 'bold'
+      fontStyle: 'normal'
     })
     guidesLayer.add(topZone, topLabel)
 
@@ -635,19 +635,19 @@ function renderGuides() {
       y: bottomY,
       width: W,
       height: bottomH,
-      fill: 'rgba(245, 158, 11, 0.08)',
-      stroke: 'rgba(245, 158, 11, 0.5)',
-      strokeWidth: 2,
-      dash: [8, 6]
+      fill: 'rgba(71, 85, 105, 0.03)',
+      stroke: 'rgba(100, 116, 139, 0.35)',
+      strokeWidth: 1,
+      dash: [4, 4]
     })
     const bottomLabel = new Konva.Text({
       x: 24,
       y: bottomY + 16,
-      text: '🎵 短视频底部标题与音乐避让区 (22%)',
-      fontSize: Math.max(14, Math.round(W * 0.024)),
-      fill: '#f59e0b',
+      text: '短视频底部标题与音乐避让区 (22%)',
+      fontSize: Math.max(12, Math.round(W * 0.02)),
+      fill: '#64748b',
       fontFamily: "'Noto Sans SC', sans-serif",
-      fontStyle: 'bold'
+      fontStyle: 'normal'
     })
     guidesLayer.add(bottomZone, bottomLabel)
 
@@ -657,20 +657,19 @@ function renderGuides() {
       y: topH,
       width: rightW,
       height: H - topH - bottomH,
-      fill: 'rgba(245, 158, 11, 0.08)',
-      stroke: 'rgba(245, 158, 11, 0.5)',
-      strokeWidth: 2,
-      dash: [8, 6]
+      fill: 'rgba(71, 85, 105, 0.03)',
+      stroke: 'rgba(100, 116, 139, 0.35)',
+      strokeWidth: 1,
+      dash: [4, 4]
     })
     const rightLabel = new Konva.Text({
       x: W - rightW + 10,
       y: topH + 30,
       text: '侧边\n互动\n按钮\n避让',
-      fontSize: Math.max(13, Math.round(W * 0.022)),
-      fill: '#f59e0b',
+      fontSize: Math.max(11, Math.round(W * 0.018)),
+      fill: '#64748b',
       fontFamily: "'Noto Sans SC', sans-serif",
-      lineHeight: 1.4,
-      fontStyle: 'bold'
+      fontStyle: 'normal'
     })
     guidesLayer.add(rightZone, rightLabel)
   } else if (mode === 'thirds') {
@@ -1321,7 +1320,7 @@ defineExpose({
         </h2>
 
         <p class="text-xs text-chronicle-secondary font-light max-w-xs leading-relaxed mb-5">
-          支持商品实拍、AI 概念图或白底图。拖拽图片至此、快捷键 ⌘+V 粘贴，或点击下方按钮载入。
+          支持商品实拍、概念图或白底图。拖拽图片至此、快捷键 Ctrl / Cmd + V 粘贴，或点击下方按钮载入。
         </p>
 
         <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs">

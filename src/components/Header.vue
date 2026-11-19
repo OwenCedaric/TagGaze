@@ -12,7 +12,11 @@ import {
   Magnet,
   FolderOpen,
   Save,
-  FileArchive
+  FileArchive,
+  Smartphone,
+  Video,
+  Crosshair,
+  EyeOff
 } from 'lucide-vue-next'
 import { CANVAS_PRESETS } from '@/constants/presets'
 import type { CanvasDimensions, GuideOverlayType } from '@/types'
@@ -55,11 +59,11 @@ function handleProjectFileChange(e: Event) {
 }
 
 const GUIDE_OPTIONS = [
-  { id: 'none', label: '关闭参考线', desc: '纯净画布编辑' },
-  { id: 'xhs', label: '📕 小红书 3:4 避让安全区', desc: '避让顶部状态栏与底部描述/赞藏区' },
-  { id: 'video916', label: '🎵 抖音/TikTok 9:16 安全区', desc: '避让右侧互动按钮与底部音乐' },
-  { id: 'thirds', label: '📐 三分构图黄金法则', desc: '3×3 摄影焦点辅助网格' },
-  { id: 'center', label: '🎯 中心对称十字线', desc: '画面绝对中心定位' }
+  { id: 'none', label: '关闭参考线', desc: '纯净画布编辑', icon: EyeOff },
+  { id: 'xhs', label: '小红书 3:4 避让安全区', desc: '避让顶部状态栏与底部描述/赞藏区', icon: Smartphone },
+  { id: 'video916', label: '短视频 9:16 避让安全区', desc: '避让右侧互动按钮与底部音乐区', icon: Video },
+  { id: 'thirds', label: '三分构图法则 (3×3)', desc: '经典摄影视觉焦点辅助网格', icon: Grid3X3 },
+  { id: 'center', label: '中心对称十字参考线', desc: '画面绝对中心定位与对称参考', icon: Crosshair }
 ] as const
 </script>
 
@@ -148,9 +152,12 @@ const GUIDE_OPTIONS = [
             class="w-full text-left px-2.5 py-2 rounded-lg hover:bg-chronicle-fill flex items-start justify-between transition gap-2"
             :class="guideOverlay === opt.id ? 'bg-chronicle-accent-light text-chronicle-primary font-medium' : 'text-chronicle-secondary'"
           >
-            <div>
-              <div class="font-medium text-chronicle-primary text-[11px]">{{ opt.label }}</div>
-              <div class="text-[10px] text-chronicle-secondary font-light">{{ opt.desc }}</div>
+            <div class="flex items-start gap-2">
+              <component :is="opt.icon" class="w-3.5 h-3.5 text-chronicle-accent shrink-0 mt-0.5" />
+              <div>
+                <div class="font-medium text-chronicle-primary text-[11px]">{{ opt.label }}</div>
+                <div class="text-[10px] text-chronicle-secondary font-light">{{ opt.desc }}</div>
+              </div>
             </div>
             <Check v-if="guideOverlay === opt.id" class="w-3.5 h-3.5 text-chronicle-accent shrink-0 mt-0.5" />
           </button>

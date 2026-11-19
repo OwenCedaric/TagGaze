@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { LayoutTemplate, Image as ImageIcon, Type, Sparkles, ShieldCheck } from 'lucide-vue-next'
+import { Image as ImageIcon, Type, Sparkles, ShieldCheck } from 'lucide-vue-next'
 import type { TabType } from './Sidebar.vue'
 
 defineProps<{
@@ -25,17 +25,8 @@ const isExpanded = ref(true)
       <div class="w-8 h-1 bg-neutral-300 rounded-full"></div>
     </div>
 
-    <!-- Mobile 5-Tab Nav Strip in Light Palette -->
-    <div class="grid grid-cols-5 border-b border-chronicle-border p-1 gap-1 bg-chronicle-surface">
-      <button
-        @click="emit('update:activeTab', 'templates'); isExpanded = true"
-        class="py-2 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition"
-        :class="activeTab === 'templates' ? 'bg-white text-chronicle-primary font-medium shadow-xs border border-chronicle-border' : 'text-chronicle-secondary'"
-      >
-        <LayoutTemplate class="w-3.5 h-3.5" :class="activeTab === 'templates' ? 'text-chronicle-accent' : ''" />
-        <span>模板</span>
-      </button>
-
+    <!-- Mobile 4-Tab Nav Strip in Light Palette -->
+    <div class="grid grid-cols-4 border-b border-chronicle-border p-1 gap-1 bg-chronicle-surface">
       <button
         @click="emit('update:activeTab', 'image'); isExpanded = true"
         class="py-2 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition relative"

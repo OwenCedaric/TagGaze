@@ -188,7 +188,7 @@ export const SVG_ASSETS: SvgAssetItem[] = [
   // ================= 3. 社媒种草与手绘标识 (Social & Pointers) =================
   {
     id: 'tag-recommend',
-    name: '🌿 亲测推荐胶囊',
+    name: '亲测推荐胶囊',
     category: 'social',
     categoryName: '社媒种草指示',
     defaultFill: '#10b981',
@@ -197,12 +197,12 @@ export const SVG_ASSETS: SvgAssetItem[] = [
     svg: `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="48" viewBox="0 0 160 48" fill="none">
       <rect x="2" y="2" width="156" height="44" rx="22" fill="currentColor"/>
       <circle cx="22" cy="24" r="8" fill="#ffffff"/>
-      <text x="88" y="30" font-size="15" font-family="sans-serif" font-weight="bold" text-anchor="middle" fill="#ffffff" letter-spacing="1">🌿 亲测推荐</text>
+      <text x="88" y="30" font-size="15" font-family="sans-serif" font-weight="bold" text-anchor="middle" fill="#ffffff" letter-spacing="1">亲测推荐</text>
     </svg>`
   },
   {
     id: 'tag-mustbuy',
-    name: '✨ 闭眼入神仙好物',
+    name: '闭眼入神仙好物',
     category: 'social',
     categoryName: '社媒种草指示',
     defaultFill: '#3d4451',
@@ -210,7 +210,7 @@ export const SVG_ASSETS: SvgAssetItem[] = [
     defaultHeight: 50,
     svg: `<svg xmlns="http://www.w3.org/2000/svg" width="170" height="48" viewBox="0 0 170 48" fill="none">
       <rect x="2" y="2" width="166" height="44" rx="8" fill="currentColor"/>
-      <text x="85" y="30" font-size="14" font-family="sans-serif" font-weight="bold" text-anchor="middle" fill="#ffffff" letter-spacing="1">✨ 闭眼入不踩雷</text>
+      <text x="85" y="30" font-size="14" font-family="sans-serif" font-weight="bold" text-anchor="middle" fill="#ffffff" letter-spacing="1">闭眼入不踩雷</text>
     </svg>`
   },
   {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { LayoutTemplate, Image as ImageIcon, Type, Sparkles, ShieldCheck } from 'lucide-vue-next'
+import { Image as ImageIcon, Type, Sparkles, ShieldCheck } from 'lucide-vue-next'
 
-export type TabType = 'templates' | 'image' | 'text' | 'assets' | 'watermark'
+export type TabType = 'image' | 'text' | 'assets' | 'watermark'
 
 defineProps<{
   activeTab: TabType
@@ -15,22 +15,13 @@ const emit = defineEmits<{
 
 <template>
   <aside class="hidden md:flex flex-col w-80 lg:w-96 border-r border-chronicle-border bg-chronicle-surface-raised z-20 shrink-0 shadow-xs">
-    <!-- Chronicle 5-Tab Nav Strip in Light Palette -->
-    <div class="grid grid-cols-5 border-b border-chronicle-border p-1.5 gap-1 bg-chronicle-surface">
-      <button
-        @click="emit('update:activeTab', 'templates')"
-        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition"
-        :class="activeTab === 'templates' ? 'bg-white text-chronicle-primary font-medium shadow-xs border border-chronicle-border' : 'text-chronicle-secondary hover:text-chronicle-primary hover:bg-white/60'"
-        title="电商与社媒一键排版模板"
-      >
-        <LayoutTemplate class="w-3.5 h-3.5" :class="activeTab === 'templates' ? 'text-chronicle-accent' : ''" />
-        <span>模板</span>
-      </button>
-
+    <!-- Chronicle 4-Tab Nav Strip in Light Palette -->
+    <div class="grid grid-cols-4 border-b border-chronicle-border p-1.5 gap-1 bg-chronicle-surface">
       <button
         @click="emit('update:activeTab', 'image')"
-        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition relative"
+        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1.5 transition relative"
         :class="activeTab === 'image' ? 'bg-white text-chronicle-primary font-medium shadow-xs border border-chronicle-border' : 'text-chronicle-secondary hover:text-chronicle-primary hover:bg-white/60'"
+        title="底图、画布比例与双图对比分屏"
       >
         <ImageIcon class="w-3.5 h-3.5" :class="activeTab === 'image' ? 'text-chronicle-accent' : ''" />
         <span>底图</span>
@@ -39,8 +30,9 @@ const emit = defineEmits<{
 
       <button
         @click="emit('update:activeTab', 'text')"
-        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition"
+        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1.5 transition"
         :class="activeTab === 'text' ? 'bg-white text-chronicle-primary font-medium shadow-xs border border-chronicle-border' : 'text-chronicle-secondary hover:text-chronicle-primary hover:bg-white/60'"
+        title="文本层级、营销利益胶囊与字体排版"
       >
         <Type class="w-3.5 h-3.5" :class="activeTab === 'text' ? 'text-chronicle-accent' : ''" />
         <span>文案</span>
@@ -48,8 +40,9 @@ const emit = defineEmits<{
 
       <button
         @click="emit('update:activeTab', 'assets')"
-        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition"
+        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1.5 transition"
         :class="activeTab === 'assets' ? 'bg-white text-chronicle-primary font-medium shadow-xs border border-chronicle-border' : 'text-chronicle-secondary hover:text-chronicle-primary hover:bg-white/60'"
+        title="品牌资产库、卖点引线与高转化徽章"
       >
         <Sparkles class="w-3.5 h-3.5" :class="activeTab === 'assets' ? 'text-chronicle-accent' : ''" />
         <span>徽章</span>
@@ -57,8 +50,9 @@ const emit = defineEmits<{
 
       <button
         @click="emit('update:activeTab', 'watermark')"
-        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1 transition"
+        class="py-2 px-1 rounded-lg text-xs font-light flex items-center justify-center gap-1.5 transition"
         :class="activeTab === 'watermark' ? 'bg-white text-chronicle-primary font-medium shadow-xs border border-chronicle-border' : 'text-chronicle-secondary hover:text-chronicle-primary hover:bg-white/60'"
+        title="防盗水印与鼠标任意拖拽定位"
       >
         <ShieldCheck class="w-3.5 h-3.5" :class="activeTab === 'watermark' ? 'text-chronicle-accent' : ''" />
         <span>水印</span>

@@ -2,7 +2,6 @@
 import { ref } from 'vue'
 import {
   Pipette,
-  Type,
   Sparkles,
   AlignLeft,
   AlignCenter,
@@ -14,7 +13,8 @@ import {
   Highlighter,
   ChevronDown,
   ChevronUp,
-  Plus
+  Plus,
+  Info
 } from 'lucide-vue-next'
 import { FONTS, TEXT_TIERS, TEXT_PRESETS, PROMO_BENEFIT_PRESETS, type TextTier, type PromoBenefitPreset } from '@/constants/fonts'
 import type { TextElement } from '@/types'
@@ -57,7 +57,7 @@ async function pickColor(target: 'fill' | 'stroke' | 'backgroundColor') {
       <!-- Active Text Header Pill -->
       <div class="flex items-center justify-between pb-2 border-b border-chronicle-border">
         <div class="flex items-center gap-1.5 font-medium text-chronicle-primary text-xs">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-chronicle-accent"></span>
           <span>正在编辑文本图层</span>
         </div>
         <span class="text-[10px] text-chronicle-secondary font-mono opacity-80">
@@ -201,32 +201,32 @@ async function pickColor(target: 'fill' | 'stroke' | 'backgroundColor') {
               />
             </div>
           </div>
-          <!-- E-Commerce Quick Color Swatches -->
+          <!-- Refined Editorial Color Swatches -->
           <div class="flex items-center gap-1.5">
             <button
-              @click="emit('updateText', { fill: '#e11d48' })"
-              title="大促红 #e11d48"
-              class="w-5 h-5 rounded-full border border-chronicle-border bg-[#e11d48] hover:scale-110 transition shadow-xs"
+              @click="emit('updateText', { fill: '#1e293b' })"
+              title="深墨黑 #1e293b"
+              class="w-5 h-5 rounded-full border border-chronicle-border bg-[#1e293b] hover:scale-110 transition shadow-xs"
             ></button>
             <button
-              @click="emit('updateText', { fill: '#f59e0b' })"
-              title="活力橙 #f59e0b"
-              class="w-5 h-5 rounded-full border border-chronicle-border bg-[#f59e0b] hover:scale-110 transition shadow-xs"
+              @click="emit('updateText', { fill: '#be123c' })"
+              title="典雅红 #be123c"
+              class="w-5 h-5 rounded-full border border-chronicle-border bg-[#be123c] hover:scale-110 transition shadow-xs"
             ></button>
             <button
-              @click="emit('updateText', { fill: '#10b981' })"
-              title="自然绿 #10b981"
-              class="w-5 h-5 rounded-full border border-chronicle-border bg-[#10b981] hover:scale-110 transition shadow-xs"
+              @click="emit('updateText', { fill: '#d97706' })"
+              title="暖琥珀 #d97706"
+              class="w-5 h-5 rounded-full border border-chronicle-border bg-[#d97706] hover:scale-110 transition shadow-xs"
+            ></button>
+            <button
+              @click="emit('updateText', { fill: '#047857' })"
+              title="松柏绿 #047857"
+              class="w-5 h-5 rounded-full border border-chronicle-border bg-[#047857] hover:scale-110 transition shadow-xs"
             ></button>
             <button
               @click="emit('updateText', { fill: '#82a1b9' })"
               title="冰川蓝 #82a1b9"
               class="w-5 h-5 rounded-full border border-chronicle-border bg-[#82a1b9] hover:scale-110 transition shadow-xs"
-            ></button>
-            <button
-              @click="emit('updateText', { fill: '#3d4451' })"
-              title="墨黑 #3d4451"
-              class="w-5 h-5 rounded-full border border-chronicle-border bg-[#3d4451] hover:scale-110 transition shadow-xs"
             ></button>
             <button
               @click="emit('updateText', { fill: '#ffffff' })"
@@ -607,10 +607,10 @@ async function pickColor(target: 'fill' | 'stroke' | 'backgroundColor') {
       </div>
 
       <!-- Friendly guidance card -->
-      <div class="p-4 rounded-xl border border-chronicle-border bg-chronicle-fill/40 text-center space-y-1.5">
-        <Type class="w-6 h-6 mx-auto text-chronicle-accent/70 mb-1" />
-        <div class="text-xs font-medium text-chronicle-primary font-serif">文字编辑与排版微调</div>
-        <p class="text-[11px] text-chronicle-secondary font-light leading-relaxed">
+      <div class="p-3.5 rounded-xl border border-chronicle-border/80 bg-chronicle-surface text-center space-y-1 shadow-xs">
+        <Info class="w-4 h-4 mx-auto text-chronicle-accent mb-1" />
+        <div class="text-[11px] font-medium text-chronicle-primary font-serif">文字编辑与微调说明</div>
+        <p class="text-[10px] text-chronicle-secondary font-light leading-relaxed">
           点击上方卡片添加大标题、利益点或副标题；在画布上点击任意文字图层即可在此处微调字号、色彩、底块与马克笔重点词高光。
         </p>
       </div>

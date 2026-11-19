@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Upload, Sparkles, Move, Pipette, Award, Trash2 } from 'lucide-vue-next'
+import {
+  Upload,
+  Sparkles,
+  Move,
+  Pipette,
+  Award,
+  Trash2,
+  ArrowUpRight,
+  Target,
+  Search,
+  MapPin,
+  HelpCircle,
+  Plus
+} from 'lucide-vue-next'
 import { SVG_ASSETS, ASSET_CATEGORIES } from '@/constants/assets'
 import type { SvgElement, BrandKitConfig } from '@/types'
 
@@ -208,8 +221,9 @@ async function pickBadgeColor() {
           @click="emit('addBrandGuarantee', brandKit?.brandName || '官方旗舰', brandKit?.brandTagline || '官方正品 · 顺丰速发', brandKit?.primaryColor || '#3d4451')"
           class="p-2 rounded-lg border border-chronicle-border bg-white hover:border-chronicle-accent hover:bg-chronicle-fill text-left transition flex flex-col gap-0.5 shadow-xs"
         >
-          <div class="text-[11px] font-medium text-chronicle-primary flex items-center gap-1">
-            <span>🏷 插入官方背书长条</span>
+          <div class="text-[11px] font-medium text-chronicle-primary flex items-center gap-1.5">
+            <Award class="w-3.5 h-3.5 text-chronicle-accent" />
+            <span>插入官方背书长条</span>
           </div>
           <span class="text-[9px] text-chronicle-secondary font-mono truncate">
             {{ brandKit?.brandName || 'CHRONICLE' }} · 正品保证
@@ -222,8 +236,9 @@ async function pickBadgeColor() {
           @click="emit('uploadLogo', brandKit.logoSrc)"
           class="p-2 rounded-lg border border-chronicle-border bg-white hover:border-chronicle-accent hover:bg-chronicle-fill text-left transition flex flex-col gap-0.5 shadow-xs"
         >
-          <div class="text-[11px] font-medium text-chronicle-primary flex items-center gap-1">
-            <span>⚡️ 插入常驻品牌 Logo</span>
+          <div class="text-[11px] font-medium text-chronicle-primary flex items-center gap-1.5">
+            <Sparkles class="w-3.5 h-3.5 text-chronicle-accent" />
+            <span>插入常驻品牌 Logo</span>
           </div>
           <span class="text-[9px] text-chronicle-secondary font-mono">一键贴图上画布</span>
         </button>
@@ -234,8 +249,9 @@ async function pickBadgeColor() {
           @click="isBrandKitExpanded = true"
           class="p-2 rounded-lg border border-dashed border-chronicle-border bg-white hover:bg-chronicle-fill text-left transition flex flex-col gap-0.5 shadow-xs"
         >
-          <div class="text-[11px] font-medium text-chronicle-secondary flex items-center gap-1">
-            <span>＋ 配置常驻 Logo</span>
+          <div class="text-[11px] font-medium text-chronicle-secondary flex items-center gap-1.5">
+            <Plus class="w-3.5 h-3.5 text-chronicle-accent" />
+            <span>配置常驻 Logo</span>
           </div>
           <span class="text-[9px] text-chronicle-secondary/70 font-mono">点击展开配置</span>
         </button>
@@ -335,8 +351,8 @@ async function pickBadgeColor() {
           @click="emit('addCalloutPin', 'arrow', '升级钛合金轴承')"
           class="p-2 rounded-lg border border-chronicle-border bg-white hover:border-chronicle-accent hover:bg-chronicle-fill text-left transition flex flex-col gap-0.5 shadow-xs"
         >
-          <div class="flex items-center gap-1 text-[11px] font-medium text-chronicle-primary">
-            <span class="text-rose-500 font-bold">↗</span>
+          <div class="flex items-center gap-1.5 text-[11px] font-medium text-chronicle-primary">
+            <ArrowUpRight class="w-3.5 h-3.5 text-chronicle-accent" />
             <span>弧形引线便签</span>
           </div>
           <span class="text-[9px] text-chronicle-secondary font-mono">「升级钛合金轴承」</span>
@@ -346,8 +362,8 @@ async function pickBadgeColor() {
           @click="emit('addCalloutPin', 'focus', '核心功效焦点')"
           class="p-2 rounded-lg border border-chronicle-border bg-white hover:border-chronicle-accent hover:bg-chronicle-fill text-left transition flex flex-col gap-0.5 shadow-xs"
         >
-          <div class="flex items-center gap-1 text-[11px] font-medium text-chronicle-primary">
-            <span class="text-amber-500 font-bold">◎</span>
+          <div class="flex items-center gap-1.5 text-[11px] font-medium text-chronicle-primary">
+            <Target class="w-3.5 h-3.5 text-chronicle-accent" />
             <span>聚光焦点便签</span>
           </div>
           <span class="text-[9px] text-chronicle-secondary font-mono">「核心功效焦点」</span>
@@ -357,8 +373,8 @@ async function pickBadgeColor() {
           @click="emit('addCalloutPin', 'magnifier', '微观质感细节')"
           class="p-2 rounded-lg border border-chronicle-border bg-white hover:border-chronicle-accent hover:bg-chronicle-fill text-left transition flex flex-col gap-0.5 shadow-xs"
         >
-          <div class="flex items-center gap-1 text-[11px] font-medium text-chronicle-primary">
-            <span class="text-sky-500 font-bold">⚲</span>
+          <div class="flex items-center gap-1.5 text-[11px] font-medium text-chronicle-primary">
+            <Search class="w-3.5 h-3.5 text-chronicle-accent" />
             <span>质感放大便签</span>
           </div>
           <span class="text-[9px] text-chronicle-secondary font-mono">「微观质感细节」</span>
@@ -368,8 +384,8 @@ async function pickBadgeColor() {
           @click="emit('addCalloutPin', 'pindot', '原产地直采认证')"
           class="p-2 rounded-lg border border-chronicle-border bg-white hover:border-chronicle-accent hover:bg-chronicle-fill text-left transition flex flex-col gap-0.5 shadow-xs"
         >
-          <div class="flex items-center gap-1 text-[11px] font-medium text-chronicle-primary">
-            <span class="text-emerald-500 font-bold">📍</span>
+          <div class="flex items-center gap-1.5 text-[11px] font-medium text-chronicle-primary">
+            <MapPin class="w-3.5 h-3.5 text-chronicle-accent" />
             <span>锚点定位便签</span>
           </div>
           <span class="text-[9px] text-chronicle-secondary font-mono">「原产地直采认证」</span>
@@ -421,7 +437,10 @@ async function pickBadgeColor() {
       </div>
 
       <div class="p-3 rounded-lg bg-chronicle-fill border border-chronicle-border/60 text-[11px] text-chronicle-secondary font-light space-y-1">
-        <div class="font-medium text-chronicle-primary">💡 徽章排版交互说明：</div>
+        <div class="font-medium text-chronicle-primary flex items-center gap-1.5">
+          <HelpCircle class="w-3.5 h-3.5 text-chronicle-secondary" />
+          <span>徽章排版交互说明</span>
+        </div>
         <div>• 点击任意徽章即可添加到图片画布中</div>
         <div>• 鼠标悬停可直接拖拽调整位置，拖拽四个控制角可等比缩放</div>
         <div>• 选中徽章后，可使用上方浮动工具栏进行层级调整、复制与删除</div>

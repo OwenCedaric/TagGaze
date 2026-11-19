@@ -9,7 +9,6 @@ import BaseImagePanel from './components/panels/BaseImagePanel.vue'
 import TextPanel from './components/panels/TextPanel.vue'
 import AssetsPanel from './components/panels/AssetsPanel.vue'
 import WatermarkPanel from './components/panels/WatermarkPanel.vue'
-import TemplatesPanel from './components/panels/TemplatesPanel.vue'
 import ExportModal from './components/panels/ExportModal.vue'
 import BatchExportModal from './components/panels/BatchExportModal.vue'
 
@@ -20,7 +19,7 @@ import { useBrandKit } from './composables/useBrandKit'
 import { exportProjectFile, parseProjectFile } from './utils/projectFile'
 import { SimpleZip } from './utils/simpleZip'
 import type { TabType } from './components/layout/Sidebar.vue'
-import type { TextElement, SvgElement, ExportOptions, LayoutTemplate, BatchImageItem, BatchExportOptions } from './types'
+import type { TextElement, SvgElement, ExportOptions, BatchImageItem, BatchExportOptions } from './types'
 
 // Active Panel Tab: default to 'image' if no base image, else 'text'
 const activeTab = ref<TabType>('image')
@@ -68,7 +67,6 @@ const {
   loadDemoTemplate,
   loadDemoSplitImages,
   guideOverlay,
-  applyTemplate,
   enableSnapping,
   toggleSnapping,
   splitConfig,
@@ -126,13 +124,6 @@ function handleLoadDemo() {
   loadDemoTemplate()
   nextTick(() => {
     activeTab.value = 'assets'
-  })
-}
-
-function handleApplyTemplate(template: LayoutTemplate) {
-  applyTemplate(template)
-  nextTick(() => {
-    activeTab.value = 'text'
   })
 }
 
@@ -379,16 +370,9 @@ onUnmounted(() => {
     <div class="flex-1 flex overflow-hidden relative">
       <!-- Desktop Sidebar -->
       <Sidebar v-model:activeTab="activeTab" :has-base-image="hasBaseImage">
-        <!-- Tab 0: Templates & Layouts -->
-        <TemplatesPanel
-          v-if="activeTab === 'templates'"
-          :current-ratio="currentPreset.ratio"
-          @apply-template="handleApplyTemplate"
-        />
-
         <!-- Tab 1: Base Image Manager -->
         <BaseImagePanel
-          v-else-if="activeTab === 'image'"
+          v-if="activeTab === 'image'"
           :base-image="baseImage"
           :canvas-bg-color="canvasBgColor"
           :split-config="splitConfig"
@@ -471,14 +455,8 @@ onUnmounted(() => {
 
       <!-- Mobile & Tablet Bottom Drawer -->
       <BottomDrawer v-model:activeTab="activeTab" :has-base-image="hasBaseImage">
-        <TemplatesPanel
-          v-if="activeTab === 'templates'"
-          :current-ratio="currentPreset.ratio"
-          @apply-template="handleApplyTemplate"
-        />
-
         <BaseImagePanel
-          v-else-if="activeTab === 'image'"
+          v-if="activeTab === 'image'"
           :base-image="baseImage"
           :canvas-bg-color="canvasBgColor"
           :split-config="splitConfig"

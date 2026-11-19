@@ -166,8 +166,8 @@ function handleLoadDemo() {
             <span class="font-medium text-chronicle-primary text-[11px]">
               {{ splitConfig.mode === 'split-vertical' ? '槽位 A · 左侧原图 (Before)' : '槽位 A · 上方原图 (Before)' }}
             </span>
-            <span v-if="splitConfig.imageA" class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-mono">已载入</span>
-            <span v-else class="text-[9px] px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-500">待上传</span>
+            <span v-if="splitConfig.imageA" class="text-[9px] px-1.5 py-0.5 rounded bg-chronicle-accent-light text-chronicle-primary font-mono border border-chronicle-accent/30">已载入</span>
+            <span v-else class="text-[9px] px-1.5 py-0.5 rounded bg-chronicle-fill text-chronicle-secondary font-mono border border-chronicle-border/60">待上传</span>
           </div>
 
           <div v-if="splitConfig.imageA" class="flex items-center gap-2.5">
@@ -211,8 +211,8 @@ function handleLoadDemo() {
             <span class="font-medium text-chronicle-primary text-[11px]">
               {{ splitConfig.mode === 'split-vertical' ? '槽位 B · 右侧效果图 (After)' : '槽位 B · 下方效果图 (After)' }}
             </span>
-            <span v-if="splitConfig.imageB" class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-mono">已载入</span>
-            <span v-else class="text-[9px] px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-500">待上传</span>
+            <span v-if="splitConfig.imageB" class="text-[9px] px-1.5 py-0.5 rounded bg-chronicle-accent-light text-chronicle-primary font-mono border border-chronicle-accent/30">已载入</span>
+            <span v-else class="text-[9px] px-1.5 py-0.5 rounded bg-chronicle-fill text-chronicle-secondary font-mono border border-chronicle-border/60">待上传</span>
           </div>
 
           <div v-if="splitConfig.imageB" class="flex items-center gap-2.5">
