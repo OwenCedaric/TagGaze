@@ -465,6 +465,7 @@ onUnmounted(() => {
           @update-watermark="updateWatermark"
           @select-watermark="activeTab = 'watermark'"
           @load-demo="handleLoadDemo"
+          @set-split-image="setSplitImage"
         />
       </main>
 

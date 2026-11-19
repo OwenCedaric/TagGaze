@@ -24,15 +24,41 @@ const emit = defineEmits<{
   (e: 'updateWatermark', partial: Partial<WatermarkConfig>): void
   (e: 'selectWatermark'): void
   (e: 'loadDemo'): void
+  (e: 'setSplitImage', slot: 'A' | 'B', src: string): void
 }>()
 
 const viewportRef = ref<HTMLDivElement | null>(null)
 const konvaContainerRef = ref<HTMLDivElement | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const splitSlotAInputRef = ref<HTMLInputElement | null>(null)
+const splitSlotBInputRef = ref<HTMLInputElement | null>(null)
 
 // Displayed stage pixel dimensions (scaled to fit viewport)
 const stageDisplaySize = ref({ width: 450, height: 600 })
 let currentScale = 1
+
+function handleSplitSlotFile(e: Event, slot: 'A' | 'B') {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (event) => {
+    if (event.target?.result) {
+      emit('setSplitImage', slot, event.target.result as string)
+    }
+  }
+  reader.readAsDataURL(file)
+  target.value = ''
+}
+
+function triggerSlotUpload(slot: 'A' | 'B') {
+  if (slot === 'A') {
+    splitSlotAInputRef.value?.click()
+  } else {
+    splitSlotBInputRef.value?.click()
+  }
+}
 
 let stage: Konva.Stage | null = null
 let bgLayer: Konva.Layer | null = null
@@ -111,9 +137,12 @@ function prepareSvgDataUrl(svgContent: string, fill: string): string {
 function updateStageDimensions() {
   if (!viewportRef.value) return
 
-  const padding = 48
-  const availW = Math.max(viewportRef.value.clientWidth - padding, 200)
-  const availH = Math.max(viewportRef.value.clientHeight - padding, 200)
+  // Provide adequate horizontal and vertical breathing room so that
+  // floating ElementToolbar (approx 44px height at top) does not cover the canvas top edge
+  const paddingW = 64
+  const paddingH = 96
+  const availW = Math.max(viewportRef.value.clientWidth - paddingW, 200)
+  const availH = Math.max(viewportRef.value.clientHeight - paddingH, 200)
 
   const scale = Math.min(availW / props.preset.width, availH / props.preset.height)
   currentScale = scale
@@ -826,22 +855,44 @@ async function renderSplitCollage() {
       dash: [8, 6],
       fill: 'rgba(240, 244, 248, 0.4)',
       cornerRadius: 8,
-      listening: false
+      listening: true
+    })
+    placeholderA.on('mouseenter', () => {
+      placeholderA.fill('rgba(224, 236, 246, 0.65)')
+      stage?.container().style.setProperty('cursor', 'pointer')
+      bgLayer?.batchDraw()
+    })
+    placeholderA.on('mouseleave', () => {
+      placeholderA.fill('rgba(240, 244, 248, 0.4)')
+      stage?.container().style.setProperty('cursor', 'default')
+      bgLayer?.batchDraw()
+    })
+    placeholderA.on('click tap', () => {
+      triggerSlotUpload('A')
     })
     const txtA = new Konva.Text({
       x: clipA.x + clipA.width / 2,
       y: clipA.y + clipA.height / 2,
-      text: '槽位 A (对比前/左图)\n请在左侧面板上传图片',
-      fontSize: 18,
+      text: isVert ? '槽位 A (对比前/左图)\n点击在此上传图片' : '槽位 A (对比前/上图)\n点击在此上传图片',
+      fontSize: 16,
       fontFamily: "'Noto Sans SC', sans-serif",
       fontStyle: 'bold',
       fill: '#82a1b9',
       align: 'center',
       lineHeight: 1.5,
-      listening: false
+      listening: true
     })
     txtA.offsetX(txtA.width() / 2)
     txtA.offsetY(txtA.height() / 2)
+    txtA.on('click tap', () => {
+      triggerSlotUpload('A')
+    })
+    txtA.on('mouseenter', () => {
+      stage?.container().style.setProperty('cursor', 'pointer')
+    })
+    txtA.on('mouseleave', () => {
+      stage?.container().style.setProperty('cursor', 'default')
+    })
     groupA.add(placeholderA, txtA)
   }
   bgLayer.add(groupA)
@@ -877,22 +928,44 @@ async function renderSplitCollage() {
       dash: [8, 6],
       fill: 'rgba(240, 244, 248, 0.4)',
       cornerRadius: 8,
-      listening: false
+      listening: true
+    })
+    placeholderB.on('mouseenter', () => {
+      placeholderB.fill('rgba(224, 236, 246, 0.65)')
+      stage?.container().style.setProperty('cursor', 'pointer')
+      bgLayer?.batchDraw()
+    })
+    placeholderB.on('mouseleave', () => {
+      placeholderB.fill('rgba(240, 244, 248, 0.4)')
+      stage?.container().style.setProperty('cursor', 'default')
+      bgLayer?.batchDraw()
+    })
+    placeholderB.on('click tap', () => {
+      triggerSlotUpload('B')
     })
     const txtB = new Konva.Text({
       x: clipB.x + clipB.width / 2,
       y: clipB.y + clipB.height / 2,
-      text: '槽位 B (效果后/右图)\n请在左侧面板上传图片',
-      fontSize: 18,
+      text: isVert ? '槽位 B (效果后/右图)\n点击在此上传图片' : '槽位 B (效果后/下图)\n点击在此上传图片',
+      fontSize: 16,
       fontFamily: "'Noto Sans SC', sans-serif",
       fontStyle: 'bold',
       fill: '#82a1b9',
       align: 'center',
       lineHeight: 1.5,
-      listening: false
+      listening: true
     })
     txtB.offsetX(txtB.width() / 2)
     txtB.offsetY(txtB.height() / 2)
+    txtB.on('click tap', () => {
+      triggerSlotUpload('B')
+    })
+    txtB.on('mouseenter', () => {
+      stage?.container().style.setProperty('cursor', 'pointer')
+    })
+    txtB.on('mouseleave', () => {
+      stage?.container().style.setProperty('cursor', 'default')
+    })
     groupB.add(placeholderB, txtB)
   }
   bgLayer.add(groupB)
@@ -1186,7 +1259,7 @@ defineExpose({
 <template>
   <div
     ref="viewportRef"
-    class="flex-1 h-full flex items-center justify-center bg-chronicle-surface p-4 md:p-8 overflow-hidden relative select-none"
+    class="flex-1 h-full flex items-center justify-center bg-chronicle-surface pt-12 pb-6 px-4 md:px-8 overflow-hidden relative select-none"
     @dragover.prevent
     @drop="handleDrop"
   >
@@ -1197,6 +1270,22 @@ defineExpose({
       accept="image/*"
       class="hidden"
       @change="handleFileSelect"
+    />
+
+    <!-- Hidden File Inputs for Split Slots -->
+    <input
+      ref="splitSlotAInputRef"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="handleSplitSlotFile($event, 'A')"
+    />
+    <input
+      ref="splitSlotBInputRef"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="handleSplitSlotFile($event, 'B')"
     />
 
     <!-- Chronicle Subtle Geometric Watermark Background -->

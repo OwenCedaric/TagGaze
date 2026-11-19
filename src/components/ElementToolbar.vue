@@ -18,7 +18,7 @@ const emit = defineEmits<{
 <template>
   <div
     v-if="element && !(element.type === 'image' && element.isBaseImage)"
-    class="absolute top-4 left-1/2 -translate-x-1/2 bg-white/95 border border-chronicle-border rounded-xl shadow-lg px-2 py-1.5 flex items-center gap-1 z-20 backdrop-blur-[12px]"
+    class="absolute top-3 left-1/2 -translate-x-1/2 bg-white/95 border border-chronicle-border rounded-xl shadow-lg px-2 py-1 flex items-center gap-1 z-20 backdrop-blur-[12px] transition-all"
   >
     <span class="text-[10px] font-medium text-chronicle-secondary px-2 border-r border-chronicle-border">
       {{ element.type === 'text' ? '文本' : element.type === 'svg' ? '徽章' : '贴图' }}

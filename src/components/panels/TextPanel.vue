@@ -1,5 +1,21 @@
 <script setup lang="ts">
-import { Pipette, Type, Sparkles, AlignLeft, AlignCenter, AlignRight, Tag, Bookmark, Layers, Zap, Highlighter } from 'lucide-vue-next'
+import { ref } from 'vue'
+import {
+  Pipette,
+  Type,
+  Sparkles,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Tag,
+  Bookmark,
+  Layers,
+  Zap,
+  Highlighter,
+  ChevronDown,
+  ChevronUp,
+  Plus
+} from 'lucide-vue-next'
 import { FONTS, TEXT_TIERS, TEXT_PRESETS, PROMO_BENEFIT_PRESETS, type TextTier, type PromoBenefitPreset } from '@/constants/fonts'
 import type { TextElement } from '@/types'
 
@@ -13,6 +29,8 @@ const emit = defineEmits<{
   (e: 'updateText', partial: Partial<TextElement>): void
   (e: 'applyPreset', preset: typeof TEXT_PRESETS[0]): void
 }>()
+
+const showAddMore = ref(false)
 
 async function pickColor(target: 'fill' | 'stroke' | 'backgroundColor') {
   if ('EyeDropper' in window) {
@@ -34,63 +52,19 @@ async function pickColor(target: 'fill' | 'stroke' | 'backgroundColor') {
 
 <template>
   <div class="space-y-6 text-xs text-chronicle-secondary">
-    <!-- Quick Insert by Text Tier (4 种电商核心文本层级) -->
-    <div>
-      <label class="block text-[11px] font-medium text-chronicle-primary mb-2 font-serif">
-        快速添加文字层级 (Text Tiers)
-      </label>
-      <div class="grid grid-cols-2 gap-2">
-        <button
-          v-for="tier in TEXT_TIERS"
-          :key="tier.id"
-          @click="emit('addTextTier', tier.id)"
-          class="p-2.5 rounded-lg border border-chronicle-border hover:border-chronicle-accent hover:bg-chronicle-fill text-left transition flex flex-col justify-between group"
-        >
-          <div class="flex items-center gap-1.5 font-medium text-chronicle-primary text-xs mb-0.5">
-            <Tag v-if="tier.id === 'price'" class="w-3 h-3 text-chronicle-accent" />
-            <Bookmark v-else-if="tier.id === 'hero'" class="w-3 h-3 text-chronicle-accent" />
-            <Layers v-else class="w-3 h-3 text-chronicle-accent" />
-            <span>{{ tier.label }}</span>
-          </div>
-          <div class="text-[10px] text-chronicle-secondary font-light truncate">
-            {{ tier.desc }}
-          </div>
-        </button>
-      </div>
-    </div>
-
-    <!-- High-Conversion Marketing Promo Benefit Capsules (高转化营销利益胶囊 - 杜绝货币符号) -->
-    <div>
-      <div class="flex items-center justify-between mb-2">
-        <label class="flex items-center gap-1.5 text-[11px] font-medium text-chronicle-primary font-serif">
-          <Zap class="w-3.5 h-3.5 text-chronicle-accent" />
-          <span>营销利益胶囊 (Benefit Capsules)</span>
-        </label>
-        <span class="text-[9px] text-chronicle-secondary font-light">平台规范 · 零货币符号</span>
+    <!-- MODE 1: When an active text element is selected (Prioritize Text Editing) -->
+    <div v-if="activeText" class="space-y-5">
+      <!-- Active Text Header Pill -->
+      <div class="flex items-center justify-between pb-2 border-b border-chronicle-border">
+        <div class="flex items-center gap-1.5 font-medium text-chronicle-primary text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>正在编辑文本图层</span>
+        </div>
+        <span class="text-[10px] text-chronicle-secondary font-mono opacity-80">
+          {{ activeText.fontSize }}px · {{ activeText.fontFamily.split(',')[0].replace(/'/g, '') }}
+        </span>
       </div>
 
-      <div class="grid grid-cols-3 gap-1.5">
-        <button
-          v-for="benefit in PROMO_BENEFIT_PRESETS"
-          :key="benefit.id"
-          @click="emit('addPromoBenefit', benefit)"
-          class="py-2 px-2 rounded-lg border border-chronicle-border bg-white hover:border-chronicle-accent hover:shadow-xs text-left transition flex flex-col justify-between group"
-        >
-          <span
-            class="text-[9px] px-1.5 py-0.5 rounded font-bold text-white w-fit mb-1 truncate max-w-full"
-            :style="{ backgroundColor: benefit.backgroundColor }"
-          >
-            {{ benefit.badgeText }}
-          </span>
-          <span class="text-[10px] text-chronicle-primary font-medium truncate">
-            {{ benefit.title }}
-          </span>
-        </button>
-      </div>
-    </div>
-
-    <!-- If an active text element is selected -->
-    <div v-if="activeText" class="space-y-5 pt-2 border-t border-chronicle-border">
       <!-- Text content input -->
       <div>
         <label class="block text-[11px] font-medium text-chronicle-primary mb-1.5 font-serif">
@@ -423,6 +397,7 @@ async function pickColor(target: 'fill' | 'stroke' | 'backgroundColor') {
             </div>
           </div>
         </div>
+
         <!-- Keyword Highlight (重点词高光 / 马克笔手绘涂抹强调) -->
         <div class="space-y-2 pt-2 border-t border-chronicle-border/60">
           <div class="flex items-center justify-between">
@@ -505,14 +480,140 @@ async function pickColor(target: 'fill' | 'stroke' | 'backgroundColor') {
           </div>
         </div>
       </div>
+
+      <!-- Secondary Collapsible: Add More Text / Capsules while an element is active -->
+      <div class="pt-4 border-t border-chronicle-border">
+        <button
+          @click="showAddMore = !showAddMore"
+          class="w-full flex items-center justify-between py-2 px-3 rounded-lg border border-chronicle-border bg-chronicle-fill hover:bg-white text-chronicle-primary transition text-xs font-medium"
+        >
+          <span class="flex items-center gap-1.5">
+            <Plus class="w-3.5 h-3.5 text-chronicle-accent" />
+            <span>添加新文字层级或营销胶囊</span>
+          </span>
+          <ChevronUp v-if="showAddMore" class="w-3.5 h-3.5 text-chronicle-secondary" />
+          <ChevronDown v-else class="w-3.5 h-3.5 text-chronicle-secondary" />
+        </button>
+
+        <div v-if="showAddMore" class="mt-4 space-y-5">
+          <!-- Text Tiers inside collapsible -->
+          <div>
+            <label class="block text-[11px] font-medium text-chronicle-primary mb-2 font-serif">
+              文字层级 (Text Tiers)
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="tier in TEXT_TIERS"
+                :key="tier.id"
+                @click="emit('addTextTier', tier.id)"
+                class="p-2.5 rounded-lg border border-chronicle-border hover:border-chronicle-accent hover:bg-white text-left transition flex flex-col justify-between group bg-white/70"
+              >
+                <div class="flex items-center gap-1.5 font-medium text-chronicle-primary text-xs mb-0.5">
+                  <Tag v-if="tier.id === 'price'" class="w-3 h-3 text-chronicle-accent" />
+                  <Bookmark v-else-if="tier.id === 'hero'" class="w-3 h-3 text-chronicle-accent" />
+                  <Layers v-else class="w-3 h-3 text-chronicle-accent" />
+                  <span>{{ tier.label }}</span>
+                </div>
+                <div class="text-[10px] text-chronicle-secondary font-light truncate">
+                  {{ tier.desc }}
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Promo Benefit Capsules inside collapsible -->
+          <div>
+            <label class="block text-[11px] font-medium text-chronicle-primary mb-2 font-serif">
+              营销利益胶囊 (Benefit Capsules)
+            </label>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button
+                v-for="benefit in PROMO_BENEFIT_PRESETS"
+                :key="benefit.id"
+                @click="emit('addPromoBenefit', benefit)"
+                class="py-2 px-2 rounded-lg border border-chronicle-border bg-white hover:border-chronicle-accent hover:shadow-xs text-left transition flex flex-col justify-between group"
+              >
+                <span
+                  class="text-[9px] px-1.5 py-0.5 rounded font-bold text-white w-fit mb-1 truncate max-w-full"
+                  :style="{ backgroundColor: benefit.backgroundColor }"
+                >
+                  {{ benefit.badgeText }}
+                </span>
+                <span class="text-[10px] text-chronicle-primary font-medium truncate">
+                  {{ benefit.title }}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Empty hint if no text selected -->
-    <div v-else class="text-center py-8 text-chronicle-secondary font-light">
-      <Type class="w-8 h-8 mx-auto mb-2 opacity-30 text-chronicle-accent" />
-      <p class="text-xs leading-relaxed">
-        点击上方分类直接添加大标题、卖点副标题或价格条，也可在画布上双击任意文字直接编辑
-      </p>
+    <!-- MODE 2: When NO text element is selected (Prominently Showcase Insertion) -->
+    <div v-else class="space-y-6">
+      <!-- Quick Insert by Text Tier (4 种电商核心文本层级) -->
+      <div>
+        <label class="block text-[11px] font-medium text-chronicle-primary mb-2 font-serif">
+          快速添加文字层级 (Text Tiers)
+        </label>
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            v-for="tier in TEXT_TIERS"
+            :key="tier.id"
+            @click="emit('addTextTier', tier.id)"
+            class="p-2.5 rounded-lg border border-chronicle-border hover:border-chronicle-accent hover:bg-chronicle-fill text-left transition flex flex-col justify-between group bg-white shadow-xs"
+          >
+            <div class="flex items-center gap-1.5 font-medium text-chronicle-primary text-xs mb-0.5">
+              <Tag v-if="tier.id === 'price'" class="w-3 h-3 text-chronicle-accent" />
+              <Bookmark v-else-if="tier.id === 'hero'" class="w-3 h-3 text-chronicle-accent" />
+              <Layers v-else class="w-3 h-3 text-chronicle-accent" />
+              <span>{{ tier.label }}</span>
+            </div>
+            <div class="text-[10px] text-chronicle-secondary font-light truncate">
+              {{ tier.desc }}
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- High-Conversion Marketing Promo Benefit Capsules (高转化营销利益胶囊 - 杜绝货币符号) -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="flex items-center gap-1.5 text-[11px] font-medium text-chronicle-primary font-serif">
+            <Zap class="w-3.5 h-3.5 text-chronicle-accent" />
+            <span>营销利益胶囊 (Benefit Capsules)</span>
+          </label>
+          <span class="text-[9px] text-chronicle-secondary font-light">平台规范 · 零货币符号</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-1.5">
+          <button
+            v-for="benefit in PROMO_BENEFIT_PRESETS"
+            :key="benefit.id"
+            @click="emit('addPromoBenefit', benefit)"
+            class="py-2 px-2 rounded-lg border border-chronicle-border bg-white hover:border-chronicle-accent hover:shadow-xs text-left transition flex flex-col justify-between group shadow-xs"
+          >
+            <span
+              class="text-[9px] px-1.5 py-0.5 rounded font-bold text-white w-fit mb-1 truncate max-w-full"
+              :style="{ backgroundColor: benefit.backgroundColor }"
+            >
+              {{ benefit.badgeText }}
+            </span>
+            <span class="text-[10px] text-chronicle-primary font-medium truncate">
+              {{ benefit.title }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Friendly guidance card -->
+      <div class="p-4 rounded-xl border border-chronicle-border bg-chronicle-fill/40 text-center space-y-1.5">
+        <Type class="w-6 h-6 mx-auto text-chronicle-accent/70 mb-1" />
+        <div class="text-xs font-medium text-chronicle-primary font-serif">文字编辑与排版微调</div>
+        <p class="text-[11px] text-chronicle-secondary font-light leading-relaxed">
+          点击上方卡片添加大标题、利益点或副标题；在画布上点击任意文字图层即可在此处微调字号、色彩、底块与马克笔重点词高光。
+        </p>
+      </div>
     </div>
   </div>
 </template>
