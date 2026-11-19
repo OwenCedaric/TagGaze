@@ -119,7 +119,7 @@ const progressPercent = computed(() => {
               多图批量套版与打包导出 (Batch ZIP)
             </h2>
             <p class="text-[11px] text-chronicle-secondary font-light">
-              支持一键将当前模板或防盗水印批量套用到多张商品图，自动打包为 ZIP 下载
+              以当前画布排版（文案、徽章、水印）为母版，批量替换商品底图并自动打包 ZIP
             </p>
           </div>
         </div>
@@ -154,14 +154,14 @@ const progressPercent = computed(() => {
               type="button"
               @click="exportOptions.mode = 'template'"
               :disabled="isProcessing"
-              class="p-3 rounded-xl border text-left flex items-start gap-2.5 transition shadow-xs"
+              class="p-3 rounded-xl border text-left flex items-start gap-2.5 transition"
               :class="exportOptions.mode === 'template' ? 'bg-chronicle-accent-light border-chronicle-accent text-chronicle-primary font-medium' : 'bg-white border-chronicle-border text-chronicle-secondary hover:bg-chronicle-fill'"
             >
               <Layers class="w-4 h-4 text-chronicle-accent shrink-0 mt-0.5" />
               <div>
-                <div class="font-medium text-chronicle-primary text-xs">全套版模式 (Full Template)</div>
+                <div class="font-medium text-chronicle-primary text-xs">当前画布排版套版 (Canvas Layout)</div>
                 <div class="text-[10px] text-chronicle-secondary font-light mt-0.5">
-                  保持当前营销大标题、利益胶囊、徽章与水印，逐张替换底图
+                  保持当前画布的营销大标题、利益胶囊、徽章与水印，逐张替换商品底图
                 </div>
               </div>
             </button>
@@ -170,7 +170,7 @@ const progressPercent = computed(() => {
               type="button"
               @click="exportOptions.mode = 'watermark-only'"
               :disabled="isProcessing"
-              class="p-3 rounded-xl border text-left flex items-start gap-2.5 transition shadow-xs"
+              class="p-3 rounded-xl border text-left flex items-start gap-2.5 transition"
               :class="exportOptions.mode === 'watermark-only' ? 'bg-chronicle-accent-light border-chronicle-accent text-chronicle-primary font-medium' : 'bg-white border-chronicle-border text-chronicle-secondary hover:bg-chronicle-fill'"
             >
               <ShieldCheck class="w-4 h-4 text-chronicle-accent shrink-0 mt-0.5" />

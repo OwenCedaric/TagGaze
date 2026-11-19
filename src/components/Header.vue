@@ -170,12 +170,12 @@ const GUIDE_OPTIONS = [
       </button>
 
       <!-- Undo / Redo Buttons -->
-      <div class="flex items-center rounded-lg border border-chronicle-border bg-white p-0.5 shrink-0">
+      <div class="flex items-center rounded-lg border border-chronicle-border bg-white overflow-hidden divide-x divide-chronicle-border shrink-0">
         <button
           @click="emit('undo')"
           :disabled="!canUndo"
           title="撤销 (Ctrl+Z)"
-          class="p-1.5 rounded text-chronicle-secondary hover:text-chronicle-primary hover:bg-chronicle-fill disabled:opacity-30 transition shrink-0"
+          class="p-1.5 text-chronicle-secondary hover:text-chronicle-primary hover:bg-chronicle-fill disabled:opacity-30 transition shrink-0"
         >
           <Undo2 class="w-3.5 h-3.5" />
         </button>
@@ -183,7 +183,7 @@ const GUIDE_OPTIONS = [
           @click="emit('redo')"
           :disabled="!canRedo"
           title="重做 (Ctrl+Y)"
-          class="p-1.5 rounded text-chronicle-secondary hover:text-chronicle-primary hover:bg-chronicle-fill disabled:opacity-30 transition shrink-0"
+          class="p-1.5 text-chronicle-secondary hover:text-chronicle-primary hover:bg-chronicle-fill disabled:opacity-30 transition shrink-0"
         >
           <Redo2 class="w-3.5 h-3.5" />
         </button>
@@ -201,13 +201,13 @@ const GUIDE_OPTIONS = [
         @change="handleProjectFileChange"
       />
 
-      <!-- Project Save / Load Group -->
-      <div class="flex items-center rounded-lg border border-chronicle-border bg-white p-0.5 shrink-0">
+      <!-- Project Save / Load Group (Clean Seamless Segmented Control: Zero padding, zero curved border, crisp vertical divider) -->
+      <div class="flex items-center rounded-lg border border-chronicle-border bg-white overflow-hidden divide-x divide-chronicle-border shrink-0">
         <button
           type="button"
           @click="projectFileInputRef?.click()"
           title="载入工程文件 (.taggaze)"
-          class="flex items-center gap-1 px-2.5 py-1 rounded text-xs text-chronicle-secondary hover:text-chronicle-primary hover:bg-chronicle-fill transition whitespace-nowrap shrink-0"
+          class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-chronicle-secondary hover:text-chronicle-primary hover:bg-chronicle-fill transition whitespace-nowrap shrink-0"
         >
           <FolderOpen class="w-3.5 h-3.5 text-chronicle-accent shrink-0" />
           <span class="hidden xl:inline">打开工程</span>
@@ -217,7 +217,7 @@ const GUIDE_OPTIONS = [
           type="button"
           @click="emit('saveProject')"
           title="将当前完整排版保存为本地工程包 (.taggaze)"
-          class="flex items-center gap-1 px-2.5 py-1 rounded text-xs text-chronicle-secondary hover:text-chronicle-primary hover:bg-chronicle-fill transition border-l border-chronicle-border/60 whitespace-nowrap shrink-0"
+          class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-chronicle-secondary hover:text-chronicle-primary hover:bg-chronicle-fill transition whitespace-nowrap shrink-0"
         >
           <Save class="w-3.5 h-3.5 text-chronicle-accent shrink-0" />
           <span class="hidden xl:inline">保存工程</span>
