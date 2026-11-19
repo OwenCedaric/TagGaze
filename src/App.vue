@@ -76,7 +76,7 @@ const {
 } = useCanvas()
 
 // Watermark Composable
-const { watermark, toggleWatermark, updateWatermark } = useWatermark()
+const { watermark, updateWatermark } = useWatermark()
 
 // Export Composable
 const {
@@ -349,21 +349,17 @@ onUnmounted(() => {
       :current-preset="currentPreset"
       :can-undo="canUndo"
       :can-redo="canRedo"
-      :watermark-enabled="watermark.enabled"
-      :has-base-image="hasBaseImage"
       :guide-overlay="guideOverlay"
       :enable-snapping="enableSnapping"
       @change-preset="setPreset"
       @undo="undo"
       @redo="redo"
-      @toggle-watermark="toggleWatermark()"
       @change-guide-overlay="(m) => guideOverlay = m"
       @toggle-snapping="toggleSnapping"
       @save-project="handleSaveProject"
       @open-project-file="handleOpenProjectFile"
       @open-batch="isBatchModalOpen = true"
       @open-export="handleOpenExport"
-      @trigger-upload="activeTab = 'image'"
     />
 
     <!-- Main Workspace -->
